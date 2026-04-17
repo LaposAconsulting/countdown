@@ -268,11 +268,27 @@ html, body {
   font-style: italic;
   font-size: 300px;
   line-height: 0.82;
-  letter-spacing: -14px;
+  letter-spacing: -6px;
   color: #f3e9d2;
   -webkit-font-feature-settings: "tnum", "lnum";
   font-feature-settings: "tnum", "lnum";
+  -webkit-font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums;
   text-shadow: 0 10px 50px rgba(0,0,0,0.6), 0 2px 0 rgba(255,255,255,0.04);
+  display: -webkit-inline-box;
+  display: -webkit-inline-flex;
+  display: inline-flex;
+  white-space: nowrap;
+}
+
+/* Fixed-width digit cell — keeps italic serif numbers from shifting
+   when the value changes. Ratio is tuned for Fraunces italic. */
+.dig {
+  display: inline-block;
+  width: 0.62em;
+  text-align: center;
+  -webkit-font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums;
 }
 .lbl {
   margin-top: 34px;
@@ -299,7 +315,7 @@ html, body {
 
 /* 720p / smaller */
 @media (max-width: 1440px) {
-  .num { font-size: 220px; letter-spacing: -10px; }
+  .num { font-size: 220px; letter-spacing: -4px; }
   .cell { padding: 0 32px; }
   .topbar { font-size: 13px; letter-spacing: 4px; padding: 20px 36px 0 36px; }
   .rule { margin: 12px 36px 0 36px; }
@@ -311,7 +327,7 @@ html, body {
 
 /* 4K TVs */
 @media (min-width: 2560px) {
-  .num { font-size: 440px; letter-spacing: -22px; }
+  .num { font-size: 440px; letter-spacing: -10px; }
   .cell { padding: 0 80px; }
   .topbar { font-size: 26px; letter-spacing: 8px; padding: 48px 80px 0 80px; }
   .rule { margin: 20px 80px 0 80px; }

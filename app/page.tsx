@@ -43,10 +43,22 @@ const STARS = (() => {
 export default function Page() {
   const t = compute(Date.now());
 
+  // ES5-safe ticker. Updates each digit cell individually so the italic
+  // numbers don't shift horizontally when the value changes.
   const tickerJs =
     "(function(){var T=" +
     TARGET_MS +
-    ";function p(n){n=String(n);return n.length<2?'0'+n:n;}function t(){var m=T-(new Date()).getTime();if(m<0)m=0;var d=Math.floor(m/86400000);var h=Math.floor((m%86400000)/3600000);var mi=Math.floor((m%3600000)/60000);var s=Math.floor((m%60000)/1000);var e;e=document.getElementById('cd-d');if(e)e.innerHTML=p(d);e=document.getElementById('cd-h');if(e)e.innerHTML=p(h);e=document.getElementById('cd-m');if(e)e.innerHTML=p(mi);e=document.getElementById('cd-s');if(e)e.innerHTML=p(s);}t();setInterval(t,1000);})();";
+    ";function pad(n){n=String(n);return n.length<2?'0'+n:n;}function setDigits(id,val){var s=pad(val);var a=document.getElementById(id+'-0');var b=document.getElementById(id+'-1');if(a&&a.firstChild)a.firstChild.nodeValue=s.charAt(0);else if(a)a.innerHTML=s.charAt(0);if(b&&b.firstChild)b.firstChild.nodeValue=s.charAt(1);else if(b)b.innerHTML=s.charAt(1);}function tick(){var m=T-(new Date()).getTime();if(m<0)m=0;setDigits('cd-d',Math.floor(m/86400000));setDigits('cd-h',Math.floor((m%86400000)/3600000));setDigits('cd-m',Math.floor((m%3600000)/60000));setDigits('cd-s',Math.floor((m%60000)/1000));}tick();setInterval(tick,1000);})();";
+
+  function Num({ id, value }: { id: string; value: number }) {
+    const s = pad2(value);
+    return (
+      <span id={id} className="num">
+        <span id={id + "-0"} className="dig">{s.charAt(0)}</span>
+        <span id={id + "-1"} className="dig">{s.charAt(1)}</span>
+      </span>
+    );
+  }
 
   return (
     <main className="stage">
@@ -140,19 +152,19 @@ export default function Page() {
 
           <div className="countdown rise" style={{ WebkitAnimationDelay: "160ms", animationDelay: "160ms" }}>
             <div className="cell">
-              <span id="cd-d" className="num">{pad2(t.d)}</span>
+              <Num id="cd-d" value={t.d} />
               <span className="lbl">dn&iacute;</span>
             </div>
             <div className="cell">
-              <span id="cd-h" className="num">{pad2(t.h)}</span>
+              <Num id="cd-h" value={t.h} />
               <span className="lbl">hod</span>
             </div>
             <div className="cell">
-              <span id="cd-m" className="num">{pad2(t.m)}</span>
+              <Num id="cd-m" value={t.m} />
               <span className="lbl">min</span>
             </div>
             <div className="cell">
-              <span id="cd-s" className="num">{pad2(t.s)}</span>
+              <Num id="cd-s" value={t.s} />
               <span className="lbl">sek</span>
             </div>
           </div>
