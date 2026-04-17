@@ -13,9 +13,21 @@ export default function RootLayout({
   return (
     <html lang="sk">
       <head>
-        {/* Safety net: if the inline JS ticker doesn't run on the TV,
-            re-fetch the page every 30s to pick up fresh server-rendered values. */}
+        {/* Safety net: if inline ES5 ticker doesn't run on the TV,
+            re-fetch the page every 30s so values stay in sync. */}
         <meta httpEquiv="refresh" content="30" />
+        {/* Google Fonts — served as WOFF for old UAs, with strong serif/mono
+            fallbacks in CSS so the page still looks right if fonts fail. */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin=""
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=JetBrains+Mono:wght@400;500&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body>{children}</body>
     </html>

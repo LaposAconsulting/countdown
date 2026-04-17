@@ -1,5 +1,7 @@
-/* TV-safe CSS — no custom properties, no clamp, no svh, no flex gap, no oklch.
-   Targets 2014-era WebKit (Samsung Orsay / Tizen 1.x/2.x). */
+/* TV-safe modern design.
+   Targets 2014-era Samsung WebKit (Orsay / Tizen 1.x–2.x ≈ WebKit 537, Chrome ~28-35).
+   Avoids: CSS custom properties, clamp(), svh/dvh, @property, grid, gap.
+   Uses:   -webkit- prefixed flexbox + animations, hex colours, fixed px sizes. */
 
 * { box-sizing: border-box; }
 
@@ -10,7 +12,7 @@ html, body {
   height: 100%;
   background: #061529;
   color: #f3e9d2;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Fraunces", "Playfair Display", Georgia, "Times New Roman", serif;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -22,6 +24,7 @@ html, body {
   overflow: hidden;
 }
 
+/* ----- Sky & sea gradient ----- */
 .sky {
   position: absolute;
   left: 0; right: 0; top: 0; bottom: 0;
@@ -49,6 +52,126 @@ html, body {
     #041525 100%);
 }
 
+/* ----- Stars ----- */
+.stars { position: absolute; left: 0; right: 0; top: 0; bottom: 0; pointer-events: none; }
+.star {
+  position: absolute;
+  background: #f3e9d2;
+  border-radius: 50%;
+  -webkit-animation: twinkle 3.4s ease-in-out infinite;
+  animation: twinkle 3.4s ease-in-out infinite;
+}
+@-webkit-keyframes twinkle {
+  0%, 100% { opacity: 0.2; }
+  50%      { opacity: 0.95; }
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; }
+  50%      { opacity: 0.95; }
+}
+
+/* ----- Sun ----- */
+.sun-glow {
+  position: absolute;
+  left: 50%; top: 80%;
+  width: 560px; height: 560px;
+  margin-left: -280px; margin-top: -280px;
+  background: -webkit-radial-gradient(center, circle,
+    rgba(255,207,115,0.85) 0%,
+    rgba(240,128,73,0.45) 28%,
+    rgba(240,128,73,0.15) 50%,
+    rgba(240,128,73,0) 72%);
+  background: radial-gradient(circle at center,
+    rgba(255,207,115,0.85) 0%,
+    rgba(240,128,73,0.45) 28%,
+    rgba(240,128,73,0.15) 50%,
+    rgba(240,128,73,0) 72%);
+  -webkit-animation: sun-pulse 7s ease-in-out infinite;
+  animation: sun-pulse 7s ease-in-out infinite;
+}
+@-webkit-keyframes sun-pulse {
+  0%, 100% { opacity: 0.55; -webkit-transform: scale(1); }
+  50%      { opacity: 0.9;  -webkit-transform: scale(1.06); }
+}
+@keyframes sun-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 0.9;  transform: scale(1.06); }
+}
+
+.sun-disc {
+  position: absolute;
+  left: 50%; top: 81%;
+  width: 110px; height: 110px;
+  margin-left: -55px; margin-top: -55px;
+  border-radius: 50%;
+  background: -webkit-radial-gradient(45% 40%, circle,
+    #fff0c4 0%, #ffcf73 45%, #f5a454 100%);
+  background: radial-gradient(circle at 45% 40%,
+    #fff0c4 0%, #ffcf73 45%, #f5a454 100%);
+  -webkit-box-shadow: 0 0 60px rgba(255,196,110,0.55);
+  box-shadow: 0 0 60px rgba(255,196,110,0.55);
+}
+
+/* ----- Islands ----- */
+.islands {
+  position: absolute;
+  left: 0; right: 0;
+  top: 82.4%;
+  height: 4%;
+  opacity: 0.9;
+}
+
+/* ----- Waves ----- */
+.waves {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 32%;
+}
+.wave {
+  position: absolute;
+  left: 0; right: 0;
+  height: 55%;
+}
+.wave svg { display: block; height: 100%; width: 200%; }
+.wave-c { bottom: 58%; opacity: 0.55; -webkit-animation: wave-c 52s linear infinite; animation: wave-c 52s linear infinite; }
+.wave-b { bottom: 28%; opacity: 0.85; height: 60%; -webkit-animation: wave-b 34s linear infinite; animation: wave-b 34s linear infinite; }
+.wave-a { bottom: 0; -webkit-animation: wave-a 22s linear infinite; animation: wave-a 22s linear infinite; }
+
+@-webkit-keyframes wave-a { from { -webkit-transform: translate(0,0); } to { -webkit-transform: translate(-50%,0); } }
+@keyframes wave-a { from { transform: translate(0,0); } to { transform: translate(-50%,0); } }
+@-webkit-keyframes wave-b { from { -webkit-transform: translate(-12%,0); } to { -webkit-transform: translate(-62%,0); } }
+@keyframes wave-b { from { transform: translate(-12%,0); } to { transform: translate(-62%,0); } }
+@-webkit-keyframes wave-c { from { -webkit-transform: translate(-4%,0); } to { -webkit-transform: translate(-54%,0); } }
+@keyframes wave-c { from { transform: translate(-4%,0); } to { transform: translate(-54%,0); } }
+
+/* ----- Catamaran ----- */
+.cat {
+  position: absolute;
+  left: 42%;
+  top: 82%;
+  margin-left: -49px;
+  -webkit-animation: bob 5.5s ease-in-out infinite;
+  animation: bob 5.5s ease-in-out infinite;
+}
+@-webkit-keyframes bob {
+  0%, 100% { -webkit-transform: translateY(0) rotate(-1.2deg); }
+  50%      { -webkit-transform: translateY(-6px) rotate(1.2deg); }
+}
+@keyframes bob {
+  0%, 100% { transform: translateY(0) rotate(-1.2deg); }
+  50%      { transform: translateY(-6px) rotate(1.2deg); }
+}
+
+/* ----- Grain overlay (subtle) ----- */
+.grain {
+  position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+  pointer-events: none;
+  opacity: 0.22;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.28 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  background-size: 260px 260px;
+}
+
+/* ----- Foreground content ----- */
 .content {
   position: relative;
   width: 100%;
@@ -56,8 +179,11 @@ html, body {
   display: -webkit-box;
   display: -webkit-flex;
   display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
   -webkit-flex-direction: column;
   flex-direction: column;
+  z-index: 2;
 }
 
 .topbar {
@@ -65,106 +191,132 @@ html, body {
   display: -webkit-box;
   display: -webkit-flex;
   display: flex;
+  -webkit-box-pack: justify;
   -webkit-justify-content: space-between;
   justify-content: space-between;
-  font-family: "Courier New", monospace;
-  font-size: 18px;
-  letter-spacing: 6px;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 16px;
+  letter-spacing: 5px;
   text-transform: uppercase;
   color: #f3e9d2;
-  opacity: 0.78;
+  opacity: 0.8;
 }
-
-.topbar .rule {
-  border-top: 1px solid rgba(243, 233, 210, 0.28);
-  margin: 14px 0 0 0;
+.rule {
+  margin: 14px 48px 0 48px;
+  border-top: 1px solid rgba(243, 233, 210, 0.3);
 }
 
 .hero {
+  -webkit-box-flex: 1;
   -webkit-flex: 1;
   flex: 1;
   display: -webkit-box;
   display: -webkit-flex;
   display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
   -webkit-flex-direction: column;
   flex-direction: column;
+  -webkit-box-align: center;
   -webkit-align-items: center;
   align-items: center;
+  -webkit-box-pack: center;
   -webkit-justify-content: center;
   justify-content: center;
-  padding-bottom: 20vh;
+  padding-bottom: 18vh;
 }
 
 .kicker {
-  font-family: "Courier New", monospace;
-  font-size: 22px;
-  letter-spacing: 10px;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 20px;
+  letter-spacing: 9px;
   text-transform: uppercase;
-  color: #cbd8ea;
-  margin: 0 0 40px 0;
+  color: #d7e2f0;
+  margin: 0 0 48px 0;
+  opacity: 0.9;
 }
-
-.kicker .vol {
-  color: #f08049;
-}
+.kicker .vol { color: #f08049; font-style: italic; }
 
 .countdown {
   display: -webkit-box;
   display: -webkit-flex;
   display: flex;
+  -webkit-box-pack: center;
   -webkit-justify-content: center;
   justify-content: center;
+  -webkit-box-align: start;
   -webkit-align-items: flex-start;
   align-items: flex-start;
   width: 100%;
 }
-
 .cell {
   display: -webkit-box;
   display: -webkit-flex;
   display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
   -webkit-flex-direction: column;
   flex-direction: column;
+  -webkit-box-align: center;
   -webkit-align-items: center;
   align-items: center;
-  padding: 0 48px;
+  padding: 0 44px;
 }
-
 .num {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Fraunces", "Playfair Display", Georgia, serif;
   font-weight: 400;
-  font-size: 280px;
+  font-style: italic;
+  font-size: 300px;
   line-height: 0.82;
-  letter-spacing: -12px;
+  letter-spacing: -14px;
   color: #f3e9d2;
-  -webkit-font-variant-numeric: tabular-nums;
-  font-variant-numeric: tabular-nums;
-  text-shadow: 0 8px 40px rgba(0,0,0,0.55);
+  -webkit-font-feature-settings: "tnum", "lnum";
+  font-feature-settings: "tnum", "lnum";
+  text-shadow: 0 10px 50px rgba(0,0,0,0.6), 0 2px 0 rgba(255,255,255,0.04);
 }
-
 .lbl {
-  margin-top: 28px;
-  font-family: "Courier New", monospace;
-  font-size: 20px;
+  margin-top: 34px;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 18px;
   letter-spacing: 10px;
   text-transform: uppercase;
   color: #9cb8d4;
 }
 
-/* 720p TVs */
-@media (max-width: 1366px) {
-  .num { font-size: 200px; letter-spacing: -8px; }
+/* Entrance animation */
+.rise {
+  -webkit-animation: rise 900ms ease-out both;
+  animation: rise 900ms ease-out both;
+}
+@-webkit-keyframes rise {
+  from { opacity: 0; -webkit-transform: translateY(16px); }
+  to   { opacity: 1; -webkit-transform: translateY(0); }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 720p / smaller */
+@media (max-width: 1440px) {
+  .num { font-size: 220px; letter-spacing: -10px; }
   .cell { padding: 0 32px; }
-  .topbar { font-size: 14px; letter-spacing: 4px; padding: 20px 32px 0 32px; }
-  .kicker { font-size: 16px; letter-spacing: 7px; }
-  .lbl { font-size: 14px; letter-spacing: 7px; }
+  .topbar { font-size: 13px; letter-spacing: 4px; padding: 20px 36px 0 36px; }
+  .rule { margin: 12px 36px 0 36px; }
+  .kicker { font-size: 15px; letter-spacing: 7px; margin-bottom: 36px; }
+  .lbl { font-size: 14px; letter-spacing: 7px; margin-top: 24px; }
+  .sun-glow { width: 420px; height: 420px; margin-left: -210px; margin-top: -210px; }
+  .sun-disc { width: 78px; height: 78px; margin-left: -39px; margin-top: -39px; }
 }
 
 /* 4K TVs */
 @media (min-width: 2560px) {
-  .num { font-size: 420px; letter-spacing: -18px; }
+  .num { font-size: 440px; letter-spacing: -22px; }
   .cell { padding: 0 80px; }
   .topbar { font-size: 26px; letter-spacing: 8px; padding: 48px 80px 0 80px; }
-  .kicker { font-size: 32px; letter-spacing: 14px; }
-  .lbl { font-size: 30px; letter-spacing: 14px; }
+  .rule { margin: 20px 80px 0 80px; }
+  .kicker { font-size: 30px; letter-spacing: 14px; margin-bottom: 64px; }
+  .lbl { font-size: 28px; letter-spacing: 14px; margin-top: 48px; }
+  .sun-glow { width: 820px; height: 820px; margin-left: -410px; margin-top: -410px; }
+  .sun-disc { width: 160px; height: 160px; margin-left: -80px; margin-top: -80px; }
 }
