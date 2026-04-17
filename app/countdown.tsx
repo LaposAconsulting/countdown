@@ -41,25 +41,18 @@ export function Countdown() {
   ];
 
   return (
-    <div className="flex w-full items-start justify-center gap-1 md:gap-3">
-      {cells.map((c, i) => (
-        <div key={c.label} className="contents">
-          <div className="flex flex-col items-center">
-            <span
-              key={c.value}
-              className="tick-in font-display tabular-nums leading-[0.82] tracking-[-0.045em] text-[clamp(3.8rem,20vw,17rem)] text-foam drop-shadow-[0_6px_36px_rgba(0,0,0,0.55)]"
-            >
-              {c.value}
-            </span>
-            <span className="mt-2 font-mono text-[0.55rem] uppercase tracking-[0.34em] text-mist md:mt-4 md:text-[0.78rem] md:tracking-[0.38em]">
-              {c.label}
-            </span>
-          </div>
-          {i < cells.length - 1 && (
-            <span className="self-start pt-[0.08em] font-display leading-[0.82] tracking-[-0.045em] text-[clamp(2.6rem,12vw,10rem)] text-sunset/85">
-              :
-            </span>
-          )}
+    <div className="flex w-full items-start justify-center gap-10 xl:gap-16 2xl:gap-24">
+      {cells.map((c) => (
+        <div key={c.label} className="flex flex-col items-center">
+          <span
+            key={c.value}
+            className="tick-in font-display tabular-nums leading-[0.82] tracking-[-0.055em] text-foam drop-shadow-[0_10px_60px_rgba(0,0,0,0.6)] text-[clamp(8rem,20vw,22rem)]"
+          >
+            {c.value}
+          </span>
+          <span className="mt-5 font-mono uppercase tracking-[0.5em] text-mist text-[clamp(0.8rem,1vw,1.15rem)]">
+            {c.label}
+          </span>
         </div>
       ))}
     </div>
