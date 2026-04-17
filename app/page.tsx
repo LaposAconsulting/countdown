@@ -1,14 +1,14 @@
 import { Countdown } from "./countdown";
 
 const MARQUEE_WORDS = [
-  "Provisions",
-  "Camaraderie",
-  "Craft",
+  "Na palube",
+  "Katamarán",
+  "Split · HR",
+  "Jadran",
+  "Proviant",
+  "Kamarátstvo",
   "Teambuilding · MMXXVI",
-  "Bratislava",
-  "Expedition",
-  "Field Notes",
-  "Gathering",
+  "Viedeň → Split",
 ];
 
 export default function Page() {
@@ -20,11 +20,11 @@ export default function Page() {
       <header className="relative z-10 mx-5 pt-5 md:mx-10 md:pt-8">
         <div className="h-px bg-ink/80" />
         <div className="flex items-center justify-between gap-4 py-3 font-mono text-[0.6rem] uppercase tracking-[0.28em] text-ink md:text-[0.7rem] md:tracking-[0.32em]">
-          <span>Est · MMXXVI</span>
+          <span>Vydanie · MMXXVI</span>
           <span className="hidden text-stone md:inline">
-            The Teambuilding Dossier — Vol. I, N° 1
+            Teambuildingový Denník — Zväzok II, Č. 1
           </span>
-          <span>Bratislava ── SK</span>
+          <span>Viedeň ✈ Split · HR</span>
         </div>
         <div className="h-px bg-ink/80" />
       </header>
@@ -36,13 +36,13 @@ export default function Page() {
             className="rise font-editorial text-xl italic text-vermilion md:text-3xl"
             style={{ animationDelay: "80ms" }}
           >
-            — a countdown to
+            — odpočet do
           </p>
           <div
             className="rise hidden flex-col items-end gap-1 font-mono text-[0.65rem] uppercase tracking-[0.32em] text-stone md:flex"
             style={{ animationDelay: "180ms" }}
           >
-            <span>↗ save the date</span>
+            <span>↗ poznač si dátum</span>
             <span className="text-ink">27 · vi · 2026</span>
           </div>
         </div>
@@ -52,16 +52,32 @@ export default function Page() {
           style={{ animationDelay: "140ms" }}
         >
           Teambuilding
+          <span className="ml-3 align-baseline font-editorial not-italic text-[0.28em] text-vermilion md:ml-6">
+            Vol. II
+          </span>
         </h1>
 
         <div
-          className="rise mt-4 flex flex-wrap items-end justify-between gap-6 md:mt-8"
-          style={{ animationDelay: "260ms" }}
+          className="rise mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-[0.6rem] uppercase tracking-[0.28em] text-ink md:mt-7 md:text-[0.72rem] md:tracking-[0.34em]"
+          style={{ animationDelay: "220ms" }}
+        >
+          <span>Viedeň</span>
+          <span className="text-vermilion">✈</span>
+          <span>Split</span>
+          <span className="text-vermilion">⚓</span>
+          <span>Katamarán</span>
+          <span className="text-vermilion">⌘</span>
+          <span>Jadran</span>
+        </div>
+
+        <div
+          className="rise mt-5 flex flex-wrap items-end justify-between gap-6 md:mt-8"
+          style={{ animationDelay: "300ms" }}
         >
           <p className="max-w-2xl font-editorial text-xl text-stone md:text-3xl">
-            <span className="italic text-ink">the twenty-seventh</span> of June,
-            two thousand twenty-six · a gathering of the tribe, a great
-            undertaking, an unhurried day spent well.
+            <span className="italic text-ink">dvadsiateho siedmeho</span> júna,
+            dvetisícdvadsaťšesť · z Viedne letecky do Splitu, odtiaľ na
+            katamarán po Jadrane — zraz na mori.
           </p>
           <Compass />
         </div>
@@ -70,21 +86,21 @@ export default function Page() {
       {/* Countdown */}
       <section
         className="rise relative z-10 mx-5 mt-12 md:mx-10 md:mt-20"
-        style={{ animationDelay: "380ms" }}
+        style={{ animationDelay: "420ms" }}
       >
         <div className="mb-3 flex items-end justify-between">
           <span className="font-mono text-[0.6rem] uppercase tracking-[0.32em] text-vermilion md:text-[0.7rem]">
             <span className="mr-2 inline-block h-1.5 w-1.5 translate-y-[-2px] rounded-full bg-vermilion align-middle" />
-            T — minus
+            ostáva
           </span>
           <span className="font-mono text-[0.6rem] uppercase tracking-[0.32em] text-stone md:text-[0.7rem]">
-            live · ticking
+            naživo · tiká
           </span>
         </div>
         <Countdown />
         <div className="mt-3 flex items-center justify-between font-mono text-[0.55rem] uppercase tracking-[0.28em] text-stone md:text-[0.65rem]">
-          <span>reading: local time</span>
-          <span>↺ updates every second</span>
+          <span>čas · lokálny</span>
+          <span>↺ obnova každú sekundu</span>
         </div>
       </section>
 
@@ -112,9 +128,9 @@ export default function Page() {
           </div>
         </div>
         <div className="mx-5 flex items-center justify-between py-4 font-mono text-[0.55rem] uppercase tracking-[0.28em] text-stone md:mx-10 md:text-[0.65rem]">
-          <span>folio · i</span>
+          <span>folio · ii</span>
           <span className="hidden md:inline">
-            hand-set · printed on warm paper
+            ručne sadzané · tlačené na teplom papieri
           </span>
           <span>№ 027 / 06 / 26</span>
         </div>
@@ -184,7 +200,7 @@ function Compass() {
         <circle cx="50" cy="50" r="2.2" fill="currentColor" />
       </svg>
       <span className="absolute inset-0 flex items-center justify-center font-mono text-[0.5rem] uppercase tracking-[0.3em] text-ink/60">
-        N
+        S
       </span>
     </div>
   );

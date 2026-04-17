@@ -23,9 +23,9 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Teambuilding — 27 June 2026",
+  title: "Teambuilding Vol. II — 27. jún 2026 · Katamarán, Split",
   description:
-    "A field-dossier countdown to the great Teambuilding, the twenty-seventh of June, two thousand twenty-six.",
+    "Odpočet do druhého teambuildingu — dvadsiateho siedmeho júna, dvetisíc dvadsaťšesť. Z Viedne letecky do Splitu, potom na katamarán po Jadrane.",
 };
 
 export const viewport: Viewport = {
@@ -39,7 +39,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html
-      lang="en"
+      lang="sk"
       className={`${fraunces.variable} ${instrument.variable} ${jetbrains.variable}`}
     >
       <body>{children}</body>

@@ -39,10 +39,10 @@ export function Countdown() {
   }, []);
 
   const cells = [
-    { label: "Days", value: t ? pad(t.days, 2) : "––" },
-    { label: "Hours", value: t ? pad(t.hours) : "––" },
-    { label: "Minutes", value: t ? pad(t.minutes) : "––" },
-    { label: "Seconds", value: t ? pad(t.seconds) : "––" },
+    { label: "Dní", value: t ? pad(t.days, 2) : "––" },
+    { label: "Hodín", value: t ? pad(t.hours) : "––" },
+    { label: "Minút", value: t ? pad(t.minutes) : "––" },
+    { label: "Sekúnd", value: t ? pad(t.seconds) : "––" },
   ];
 
   return (
