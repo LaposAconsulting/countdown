@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #f3ede1;
+  --color-paper: #ece2cd;
+  --color-ink: #171411;
+  --color-vermilion: #cf431a;
+  --color-stone: #6a6155;
+  --color-sand: #ddd0b6;
+
+  --font-display: var(--font-fraunces);
+  --font-editorial: var(--font-instrument);
+  --font-mono: var(--font-jetbrains);
+}
+
+html,
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-editorial), serif;
+  font-feature-settings: "tnum", "ss01";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100svh;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--color-vermilion);
+  color: var(--color-cream);
+}
+
+@keyframes marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+.marquee-track { animation: marquee 48s linear infinite; }
+
+@keyframes slow-spin {
+  to { transform: rotate(360deg); }
+}
+.slow-spin { animation: slow-spin 120s linear infinite; transform-origin: 50% 50%; }
+
+@keyframes tick-in {
+  0% { opacity: 0.55; transform: translateY(-3px); filter: blur(2px); }
+  100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.tick-in { animation: tick-in 360ms cubic-bezier(.2,.7,.2,1); }
+
+@keyframes rise {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.rise { animation: rise 900ms cubic-bezier(.2,.7,.2,1) both; }
+
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.42 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 260px 260px;
+  mix-blend-mode: multiply;
+  opacity: 0.55;
+}
+
+.vignette::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 80% at 50% 10%, transparent 55%, rgba(23,20,17,0.18) 100%);
+}
