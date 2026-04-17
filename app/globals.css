@@ -1,12 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  --color-cream: #f3ede1;
-  --color-paper: #ece2cd;
-  --color-ink: #171411;
-  --color-vermilion: #cf431a;
-  --color-stone: #6a6155;
-  --color-sand: #ddd0b6;
+  --color-night: #061529;
+  --color-deep: #0b2542;
+  --color-dusk: #2c3e63;
+  --color-sea: #0f3e68;
+  --color-sea-deep: #081f38;
+  --color-mist: #9cb8d4;
+  --color-foam: #f3e9d2;
+  --color-ink: #0a1324;
+  --color-sun: #ffcf73;
+  --color-sunset: #f08049;
+  --color-vermilion: #e6562a;
+  --color-stone: #8a8372;
 
   --font-display: var(--font-fraunces);
   --font-editorial: var(--font-instrument);
@@ -15,8 +21,8 @@
 
 html,
 body {
-  background: var(--color-cream);
-  color: var(--color-ink);
+  background: var(--color-night);
+  color: var(--color-foam);
   font-family: var(--font-editorial), serif;
   font-feature-settings: "tnum", "ss01";
   -webkit-font-smoothing: antialiased;
@@ -29,8 +35,8 @@ body {
 }
 
 ::selection {
-  background: var(--color-vermilion);
-  color: var(--color-cream);
+  background: var(--color-sunset);
+  color: var(--color-night);
 }
 
 @keyframes marquee {
@@ -39,38 +45,70 @@ body {
 }
 .marquee-track { animation: marquee 48s linear infinite; }
 
-@keyframes slow-spin {
-  to { transform: rotate(360deg); }
-}
-.slow-spin { animation: slow-spin 120s linear infinite; transform-origin: 50% 50%; }
+@keyframes slow-spin { to { transform: rotate(360deg); } }
+.slow-spin { animation: slow-spin 140s linear infinite; transform-origin: 50% 50%; }
 
 @keyframes tick-in {
-  0% { opacity: 0.55; transform: translateY(-3px); filter: blur(2px); }
+  0% { opacity: 0.5; transform: translateY(-4px); filter: blur(3px); }
   100% { opacity: 1; transform: translateY(0); filter: blur(0); }
 }
-.tick-in { animation: tick-in 360ms cubic-bezier(.2,.7,.2,1); }
+.tick-in { animation: tick-in 380ms cubic-bezier(.2,.7,.2,1); }
 
 @keyframes rise {
-  0% { opacity: 0; transform: translateY(12px); }
+  0% { opacity: 0; transform: translateY(16px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 .rise { animation: rise 900ms cubic-bezier(.2,.7,.2,1) both; }
+
+@keyframes wave-a {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+.wave-a { animation: wave-a 22s linear infinite; }
+
+@keyframes wave-b {
+  from { transform: translate3d(-12%, 0, 0); }
+  to { transform: translate3d(-62%, 0, 0); }
+}
+.wave-b { animation: wave-b 34s linear infinite; }
+
+@keyframes wave-c {
+  from { transform: translate3d(-4%, 0, 0); }
+  to { transform: translate3d(-54%, 0, 0); }
+}
+.wave-c { animation: wave-c 52s linear infinite; }
+
+@keyframes bob {
+  0%, 100% { transform: translate(-50%, 0) rotate(-1.2deg); }
+  50%      { transform: translate(-50%, -6px) rotate(1.2deg); }
+}
+.bob { animation: bob 5.5s ease-in-out infinite; }
+
+@keyframes drift {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(calc(100vw + 200px), 0, 0); }
+}
+.drift { animation: drift 220s linear infinite; }
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.18; }
+  50%      { opacity: 0.95; }
+}
+.twinkle { animation: twinkle 3.4s ease-in-out infinite; }
+
+@keyframes sun-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 0.85; transform: scale(1.05); }
+}
+.sun-pulse { animation: sun-pulse 7s ease-in-out infinite; transform-origin: 50% 50%; }
 
 .grain::after {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.42 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.22 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
   background-size: 260px 260px;
-  mix-blend-mode: multiply;
-  opacity: 0.55;
-}
-
-.vignette::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(120% 80% at 50% 10%, transparent 55%, rgba(23,20,17,0.18) 100%);
+  mix-blend-mode: screen;
+  opacity: 0.3;
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-// Teambuilding · 27 June 2026 · 00:00 CEST (UTC+2)
+// Teambuilding · 27. jún 2026 · 00:00 CEST (UTC+2)
 const TARGET = new Date("2026-06-27T00:00:00+02:00").getTime();
 
 type TimeLeft = {
@@ -10,20 +10,15 @@ type TimeLeft = {
   hours: number;
   minutes: number;
   seconds: number;
-  done: boolean;
 };
 
 function computeDiff(): TimeLeft {
-  const ms = TARGET - Date.now();
-  if (ms <= 0) {
-    return { days: 0, hours: 0, minutes: 0, seconds: 0, done: true };
-  }
+  const ms = Math.max(0, TARGET - Date.now());
   return {
     days: Math.floor(ms / 86_400_000),
     hours: Math.floor((ms % 86_400_000) / 3_600_000),
     minutes: Math.floor((ms % 3_600_000) / 60_000),
     seconds: Math.floor((ms % 60_000) / 1000),
-    done: false,
   };
 }
 
@@ -39,32 +34,34 @@ export function Countdown() {
   }, []);
 
   const cells = [
-    { label: "Dní", value: t ? pad(t.days, 2) : "––" },
-    { label: "Hodín", value: t ? pad(t.hours) : "––" },
-    { label: "Minút", value: t ? pad(t.minutes) : "––" },
-    { label: "Sekúnd", value: t ? pad(t.seconds) : "––" },
+    { label: "dní", value: t ? pad(t.days, 2) : "––" },
+    { label: "hod", value: t ? pad(t.hours) : "––" },
+    { label: "min", value: t ? pad(t.minutes) : "––" },
+    { label: "sek", value: t ? pad(t.seconds) : "––" },
   ];
 
   return (
-    <div className="border-y border-ink/70 bg-paper/30">
-      <div className="grid grid-cols-4 divide-x divide-ink/25">
-        {cells.map((c) => (
-          <div
-            key={c.label}
-            className="relative flex flex-col items-center justify-center gap-2 px-1 py-6 md:px-4 md:py-10"
-          >
+    <div className="flex w-full items-start justify-center gap-1 md:gap-3">
+      {cells.map((c, i) => (
+        <div key={c.label} className="contents">
+          <div className="flex flex-col items-center">
             <span
               key={c.value}
-              className="tick-in font-display text-[clamp(2.4rem,12.5vw,10rem)] leading-[0.82] tracking-[-0.03em] tabular-nums"
+              className="tick-in font-display tabular-nums leading-[0.82] tracking-[-0.045em] text-[clamp(3.8rem,20vw,17rem)] text-foam drop-shadow-[0_6px_36px_rgba(0,0,0,0.55)]"
             >
               {c.value}
             </span>
-            <span className="mt-1 font-mono text-[0.55rem] uppercase tracking-[0.28em] text-stone md:text-[0.7rem] md:tracking-[0.32em]">
+            <span className="mt-2 font-mono text-[0.55rem] uppercase tracking-[0.34em] text-mist md:mt-4 md:text-[0.78rem] md:tracking-[0.38em]">
               {c.label}
             </span>
           </div>
-        ))}
-      </div>
+          {i < cells.length - 1 && (
+            <span className="self-start pt-[0.08em] font-display leading-[0.82] tracking-[-0.045em] text-[clamp(2.6rem,12vw,10rem)] text-sunset/85">
+              :
+            </span>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
