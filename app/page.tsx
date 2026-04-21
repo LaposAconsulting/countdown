@@ -9,6 +9,99 @@ export const revalidate = 0;
 
 const TARGET_MS = new Date("2026-06-27T00:00:00+02:00").getTime();
 
+type Weather = "clear" | "partly" | "cloudy" | "fog" | "rain" | "snow" | "storm";
+
+type Conditions = {
+  weather: Weather;
+  sunriseH: number; // decimal hour, e.g. 5.7 for 05:42
+  sunsetH: number;
+};
+
+function mapWeatherCode(code: number): Weather {
+  if (code === 0) return "clear";
+  if (code === 1) return "partly";
+  if (code === 2 || code === 3) return "cloudy";
+  if (code === 45 || code === 48) return "fog";
+  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return "rain";
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return "snow";
+  if (code >= 95) return "storm";
+  return "clear";
+}
+
+function parseIsoHour(iso: string): number {
+  // Open-Meteo returns "YYYY-MM-DDTHH:MM" already in the requested timezone.
+  const t = iso.split("T")[1];
+  if (!t) return 12;
+  const parts = t.split(":");
+  const h = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10);
+  return (isFinite(h) ? h : 0) + (isFinite(m) ? m / 60 : 0);
+}
+
+// Bratislava weather + today's sunrise/sunset via Open-Meteo (free, no key).
+// Cached 5 min, 2 s timeout, graceful fallback so a flaky network never blocks the TV.
+async function fetchConditions(): Promise<Conditions> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 2000);
+  try {
+    const res = await fetch(
+      "https://api.open-meteo.com/v1/forecast?latitude=48.15&longitude=17.11&current_weather=true&daily=sunrise,sunset&timezone=Europe%2FBratislava",
+      { next: { revalidate: 300 }, signal: controller.signal }
+    );
+    if (!res.ok) throw new Error("weather");
+    const data = (await res.json()) as {
+      current_weather?: { weathercode?: number };
+      daily?: { sunrise?: string[]; sunset?: string[] };
+    };
+    const code = data && data.current_weather && data.current_weather.weathercode;
+    const weather: Weather = typeof code === "number" ? mapWeatherCode(code) : "clear";
+    const sunrise = data && data.daily && data.daily.sunrise && data.daily.sunrise[0];
+    const sunset = data && data.daily && data.daily.sunset && data.daily.sunset[0];
+    return {
+      weather,
+      sunriseH: sunrise ? parseIsoHour(sunrise) : 6,
+      sunsetH: sunset ? parseIsoHour(sunset) : 20,
+    };
+  } catch {
+    return { weather: "clear", sunriseH: 6, sunsetH: 20 };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+// Current local hour in Bratislava (decimal), regardless of server TZ.
+function currentBratislavaHour(now: Date): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Bratislava",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(now);
+  const h = parts.find((p) => p.type === "hour");
+  const m = parts.find((p) => p.type === "minute");
+  const hn = h ? parseInt(h.value, 10) : 0;
+  const mn = m ? parseInt(m.value, 10) : 0;
+  // "24" can surface for midnight in some runtimes — normalise.
+  return (hn === 24 ? 0 : hn) + mn / 60;
+}
+
+// Maps the current time to a sun position along a sine arc from sunrise to sunset.
+// visible=false at night — the caller omits the sun layer entirely.
+function computeSunPosition(
+  hourBA: number,
+  sunriseH: number,
+  sunsetH: number
+): { left: number; top: number; visible: boolean } {
+  if (hourBA < sunriseH || hourBA > sunsetH || sunsetH <= sunriseH) {
+    return { left: 50, top: 120, visible: false };
+  }
+  const progress = (hourBA - sunriseH) / (sunsetH - sunriseH); // 0..1
+  const angle = progress * Math.PI;                             // 0..π
+  const left = 12 + progress * 76;                              // 12% at sunrise → 88% at sunset
+  const top = 78 - Math.sin(angle) * 58;                        // 78% at horizon → 20% at noon
+  return { left, top, visible: true };
+}
+
 function pad2(n: number): string {
   const s = String(n);
   return s.length < 2 ? "0" + s : s;
@@ -40,8 +133,53 @@ const STARS = (() => {
   return arr;
 })();
 
-export default function Page() {
-  const t = compute(Date.now());
+// Deterministic rain streaks — kept small for TV GPU budget.
+const RAIN = (() => {
+  const arr: Array<{ x: number; d: number; du: number; o: number }> = [];
+  for (let i = 0; i < 16; i++) {
+    arr.push({
+      x: (i * 613) % 100,
+      d: ((i * 17) % 80) / 100,
+      du: 0.65 + ((i * 11) % 45) / 100,
+      o: 0.4 + ((i * 7) % 40) / 100,
+    });
+  }
+  return arr;
+})();
+
+// Deterministic snow flakes.
+const SNOW = (() => {
+  const arr: Array<{ x: number; d: number; du: number; s: number; o: number }> = [];
+  for (let i = 0; i < 14; i++) {
+    arr.push({
+      x: (i * 419) % 100,
+      d: ((i * 37) % 60) / 10,
+      du: 5 + ((i * 13) % 35) / 10,
+      s: 4 + (i % 3),
+      o: 0.65 + ((i * 11) % 35) / 100,
+    });
+  }
+  return arr;
+})();
+
+function Cloud({ className }: { className: string }) {
+  return (
+    <svg className={"cloud " + className} viewBox="0 0 260 110" preserveAspectRatio="none" aria-hidden="true">
+      <ellipse cx="60" cy="72" rx="55" ry="26" />
+      <ellipse cx="128" cy="54" rx="68" ry="34" />
+      <ellipse cx="200" cy="70" rx="55" ry="26" />
+    </svg>
+  );
+}
+
+export default async function Page() {
+  const nowMs = Date.now();
+  const { weather, sunriseH, sunsetH } = await fetchConditions();
+  const hourBA = currentBratislavaHour(new Date(nowMs));
+  const sun = computeSunPosition(hourBA, sunriseH, sunsetH);
+  const t = compute(nowMs);
+  const cloudy = weather === "cloudy" || weather === "rain" || weather === "snow" || weather === "storm";
+  const showClouds = weather === "partly" || cloudy;
 
   // ES5-safe ticker. Updates each digit cell individually so the italic
   // numbers don't shift horizontally when the value changes.
@@ -61,10 +199,10 @@ export default function Page() {
   }
 
   return (
-    <main className="stage">
+    <main className={"stage weather-" + weather}>
       <div className="sky" aria-hidden="true" />
 
-      <div className="stars" aria-hidden="true">
+      <div className={"stars stars-" + weather} aria-hidden="true">
         {STARS.map((s, i) => (
           <span
             key={i}
@@ -82,8 +220,28 @@ export default function Page() {
         ))}
       </div>
 
-      <div className="sun-glow" aria-hidden="true" />
-      <div className="sun-disc" aria-hidden="true" />
+      {sun.visible && (
+        <div className={"sun-layer sun-layer-" + weather} aria-hidden="true">
+          <div className="sun-glow" style={{ left: sun.left + "%", top: sun.top + "%" }} />
+          <div className="sun-disc" style={{ left: sun.left + "%", top: sun.top + "%" }} />
+        </div>
+      )}
+
+      {showClouds && (
+        <div className={"clouds clouds-" + weather} aria-hidden="true">
+          <Cloud className="cloud-1" />
+          <Cloud className="cloud-2" />
+          <Cloud className="cloud-3" />
+        </div>
+      )}
+
+      {weather === "fog" && (
+        <div className="fog" aria-hidden="true">
+          <div className="fog-band fog-1" />
+          <div className="fog-band fog-2" />
+          <div className="fog-band fog-3" />
+        </div>
+      )}
 
       <svg
         className="islands"
@@ -135,6 +293,48 @@ export default function Page() {
           <path d="M118 134 Q158 138 196 130 L198 142 Q158 150 120 146 Z" />
         </svg>
       </div>
+
+      {(weather === "rain" || weather === "storm") && (
+        <div className="rain" aria-hidden="true">
+          {RAIN.map((r, i) => (
+            <span
+              key={i}
+              className="drop"
+              style={{
+                left: r.x + "%",
+                opacity: r.o,
+                WebkitAnimationDelay: r.d + "s",
+                animationDelay: r.d + "s",
+                WebkitAnimationDuration: r.du + "s",
+                animationDuration: r.du + "s",
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {weather === "snow" && (
+        <div className="snow" aria-hidden="true">
+          {SNOW.map((s, i) => (
+            <span
+              key={i}
+              className="flake"
+              style={{
+                left: s.x + "%",
+                width: s.s + "px",
+                height: s.s + "px",
+                opacity: s.o,
+                WebkitAnimationDelay: s.d + "s",
+                animationDelay: s.d + "s",
+                WebkitAnimationDuration: s.du + "s",
+                animationDuration: s.du + "s",
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {weather === "storm" && <div className="lightning" aria-hidden="true" />}
 
       <div className="grain" aria-hidden="true" />
 

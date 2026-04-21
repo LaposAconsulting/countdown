@@ -73,7 +73,7 @@ html, body {
 /* ----- Sun ----- */
 .sun-glow {
   position: absolute;
-  left: 50%; top: 80%;
+  left: 50%; top: 58%;
   width: 560px; height: 560px;
   margin-left: -280px; margin-top: -280px;
   background: -webkit-radial-gradient(center, circle,
@@ -100,7 +100,7 @@ html, body {
 
 .sun-disc {
   position: absolute;
-  left: 50%; top: 81%;
+  left: 50%; top: 58%;
   width: 110px; height: 110px;
   margin-left: -55px; margin-top: -55px;
   border-radius: 50%;
@@ -335,4 +335,231 @@ html, body {
   .lbl { font-size: 28px; letter-spacing: 14px; margin-top: 48px; }
   .sun-glow { width: 820px; height: 820px; margin-left: -410px; margin-top: -410px; }
   .sun-disc { width: 160px; height: 160px; margin-left: -80px; margin-top: -80px; }
+}
+
+/* =================================================================
+   Weather layers (Bratislava live conditions via Open-Meteo).
+   TV-safe: no blur filters, no CSS variables, short keyframe counts,
+   low element counts for rain/snow. Same legacy WebKit rules apply.
+   ================================================================= */
+
+/* Dim the whole sun stack (both pulse and disc) by weather condition.
+   A wrapper is used because .sun-glow's keyframes set opacity directly,
+   which would override any class-based opacity on the same element. */
+.sun-layer {
+  position: absolute;
+  left: 0; right: 0; top: 0; bottom: 0;
+  pointer-events: none;
+}
+/* Sun stays visible — clouds are layered on top, not a replacement. */
+.sun-layer-partly { opacity: 0.92; }
+.sun-layer-cloudy { opacity: 0.65; }
+.sun-layer-fog    { opacity: 0.6; }
+.sun-layer-rain   { opacity: 0.4; }
+.sun-layer-snow   { opacity: 0.55; }
+.sun-layer-storm  { opacity: 0.25; }
+
+/* Dim stars when sky is covered. */
+.stars-cloudy, .stars-rain, .stars-snow, .stars-storm, .stars-fog { opacity: 0.35; }
+.stars-partly { opacity: 0.75; }
+
+/* ----- Clouds ----- */
+.clouds {
+  position: absolute;
+  left: 0; right: 0;
+  top: 0;
+  height: 72%;
+  pointer-events: none;
+  overflow: hidden;
+}
+.cloud {
+  position: absolute;
+  display: block;
+  fill: #c9d4e3;
+}
+/* Negative animation-delay skips each cloud part-way through its cycle so the
+   very first render already shows clouds in-frame — no 40–80 s "empty sky" wait.
+   Supported by WebKit since ~2010. */
+.cloud-1 {
+  top: 16%;
+  width: 360px; height: 140px;
+  left: -20%;
+  opacity: 0.85;
+  -webkit-animation: cloud-drift-a 160s linear infinite;
+  animation: cloud-drift-a 160s linear infinite;
+  -webkit-animation-delay: -45s;
+  animation-delay: -45s;
+}
+.cloud-2 {
+  top: 34%;
+  width: 280px; height: 110px;
+  left: -25%;
+  opacity: 0.7;
+  -webkit-animation: cloud-drift-b 210s linear infinite;
+  animation: cloud-drift-b 210s linear infinite;
+  -webkit-animation-delay: -130s;
+  animation-delay: -130s;
+}
+.cloud-3 {
+  top: 52%;
+  width: 420px; height: 160px;
+  left: -30%;
+  opacity: 0.9;
+  -webkit-animation: cloud-drift-c 130s linear infinite;
+  animation: cloud-drift-c 130s linear infinite;
+  -webkit-animation-delay: -25s;
+  animation-delay: -25s;
+}
+@-webkit-keyframes cloud-drift-a {
+  from { -webkit-transform: translateX(0); }
+  to   { -webkit-transform: translateX(160vw); }
+}
+@keyframes cloud-drift-a {
+  from { transform: translateX(0); }
+  to   { transform: translateX(160vw); }
+}
+@-webkit-keyframes cloud-drift-b {
+  from { -webkit-transform: translateX(0); }
+  to   { -webkit-transform: translateX(170vw); }
+}
+@keyframes cloud-drift-b {
+  from { transform: translateX(0); }
+  to   { transform: translateX(170vw); }
+}
+@-webkit-keyframes cloud-drift-c {
+  from { -webkit-transform: translateX(0); }
+  to   { -webkit-transform: translateX(180vw); }
+}
+@keyframes cloud-drift-c {
+  from { transform: translateX(0); }
+  to   { transform: translateX(180vw); }
+}
+
+/* Cloud colours tinted to match the sunset palette per condition. */
+.clouds-partly .cloud { fill: #e8d8b8; }
+.clouds-cloudy .cloud { fill: #9fadc1; }
+.clouds-rain   .cloud { fill: #5a6778; }
+.clouds-snow   .cloud { fill: #b8c3d3; }
+.clouds-storm  .cloud { fill: #2d3645; }
+
+/* ----- Rain ----- */
+.rain {
+  position: absolute;
+  left: 0; right: 0;
+  top: 0; bottom: 18%; /* stops just above the water line */
+  pointer-events: none;
+  overflow: hidden;
+}
+.drop {
+  position: absolute;
+  top: -40px;
+  width: 2px;
+  height: 24px;
+  background: -webkit-linear-gradient(top, rgba(205,220,240,0) 0%, rgba(205,220,240,0.85) 100%);
+  background: linear-gradient(to bottom, rgba(205,220,240,0) 0%, rgba(205,220,240,0.85) 100%);
+  -webkit-animation: rain-fall 0.8s linear infinite;
+  animation: rain-fall 0.8s linear infinite;
+}
+@-webkit-keyframes rain-fall {
+  from { -webkit-transform: translateY(0); }
+  to   { -webkit-transform: translateY(110vh); }
+}
+@keyframes rain-fall {
+  from { transform: translateY(0); }
+  to   { transform: translateY(110vh); }
+}
+
+/* ----- Snow ----- */
+.snow {
+  position: absolute;
+  left: 0; right: 0;
+  top: 0; bottom: 18%;
+  pointer-events: none;
+  overflow: hidden;
+}
+.flake {
+  position: absolute;
+  top: -20px;
+  background: #f3e9d2;
+  border-radius: 50%;
+  -webkit-animation: snow-fall 6s linear infinite;
+  animation: snow-fall 6s linear infinite;
+}
+@-webkit-keyframes snow-fall {
+  from { -webkit-transform: translateY(0); }
+  to   { -webkit-transform: translateY(110vh); }
+}
+@keyframes snow-fall {
+  from { transform: translateY(0); }
+  to   { transform: translateY(110vh); }
+}
+
+/* ----- Fog ----- */
+.fog {
+  position: absolute;
+  left: 0; right: 0;
+  top: 58%; height: 22%;
+  pointer-events: none;
+  overflow: hidden;
+}
+.fog-band {
+  position: absolute;
+  left: -30%; right: -30%;
+  height: 45%;
+  background: -webkit-linear-gradient(left,
+    rgba(230,230,230,0) 0%,
+    rgba(230,230,230,0.5) 50%,
+    rgba(230,230,230,0) 100%);
+  background: linear-gradient(to right,
+    rgba(230,230,230,0) 0%,
+    rgba(230,230,230,0.5) 50%,
+    rgba(230,230,230,0) 100%);
+  -webkit-animation: fog-drift 90s linear infinite;
+  animation: fog-drift 90s linear infinite;
+}
+.fog-1 { top:  0%; opacity: 0.85; }
+.fog-2 { top: 32%; opacity: 0.65; -webkit-animation-duration: 130s; animation-duration: 130s; }
+.fog-3 { top: 60%; opacity: 0.55; -webkit-animation-duration: 170s; animation-duration: 170s; }
+@-webkit-keyframes fog-drift {
+  from { -webkit-transform: translateX(0); }
+  to   { -webkit-transform: translateX(-35%); }
+}
+@keyframes fog-drift {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-35%); }
+}
+
+/* ----- Lightning flash (storm only) ----- */
+.lightning {
+  position: absolute;
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: #f3e9d2;
+  opacity: 0;
+  pointer-events: none;
+  -webkit-animation: flash 8s ease-in-out infinite;
+  animation: flash 8s ease-in-out infinite;
+}
+@-webkit-keyframes flash {
+  0%, 1.5%, 3%, 100% { opacity: 0; }
+  1%                 { opacity: 0.55; }
+  2%                 { opacity: 0.3; }
+}
+@keyframes flash {
+  0%, 1.5%, 3%, 100% { opacity: 0; }
+  1%                 { opacity: 0.55; }
+  2%                 { opacity: 0.3; }
+}
+
+/* ----- Weather sizing for smaller / 4K TVs ----- */
+@media (max-width: 1440px) {
+  .cloud-1 { width: 280px; height: 108px; }
+  .cloud-2 { width: 220px; height: 88px; }
+  .cloud-3 { width: 320px; height: 124px; }
+  .drop    { width: 2px; height: 18px; }
+}
+@media (min-width: 2560px) {
+  .cloud-1 { width: 560px; height: 220px; }
+  .cloud-2 { width: 440px; height: 170px; }
+  .cloud-3 { width: 640px; height: 240px; }
+  .drop    { width: 3px; height: 36px; }
 }
