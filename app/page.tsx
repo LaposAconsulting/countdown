@@ -10,11 +10,17 @@ export const revalidate = 0;
 const TARGET_MS = new Date("2026-06-27T00:00:00+02:00").getTime();
 
 type Weather = "clear" | "partly" | "cloudy" | "fog" | "rain" | "snow" | "storm";
+type SkyPhase = "night" | "dawn" | "day" | "dusk";
 
-type Conditions = {
+type CityConditions = {
   weather: Weather;
+  temperature: number | null;
+};
+
+type Conditions = CityConditions & {
   sunriseH: number; // decimal hour, e.g. 5.7 for 05:42
   sunsetH: number;
+  split: CityConditions;
 };
 
 function mapWeatherCode(code: number): Weather {
@@ -28,6 +34,18 @@ function mapWeatherCode(code: number): Weather {
   return "clear";
 }
 
+function weatherLabel(w: Weather): string {
+  switch (w) {
+    case "clear": return "JASNO";
+    case "partly": return "POLOJASNO";
+    case "cloudy": return "OBLAČNO";
+    case "fog": return "HMLA";
+    case "rain": return "DÁŽĎ";
+    case "snow": return "SNEH";
+    case "storm": return "BÚRKA";
+  }
+}
+
 function parseIsoHour(iso: string): number {
   // Open-Meteo returns "YYYY-MM-DDTHH:MM" already in the requested timezone.
   const t = iso.split("T")[1];
@@ -38,35 +56,53 @@ function parseIsoHour(iso: string): number {
   return (isFinite(h) ? h : 0) + (isFinite(m) ? m / 60 : 0);
 }
 
-// Bratislava weather + today's sunrise/sunset via Open-Meteo (free, no key).
-// Cached 5 min, 2 s timeout, graceful fallback so a flaky network never blocks the TV.
-async function fetchConditions(): Promise<Conditions> {
+type OpenMeteoResp = {
+  current_weather?: { weathercode?: number; temperature?: number };
+  daily?: { sunrise?: string[]; sunset?: string[] };
+};
+
+async function omFetch(url: string): Promise<OpenMeteoResp | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 2000);
   try {
-    const res = await fetch(
-      "https://api.open-meteo.com/v1/forecast?latitude=48.15&longitude=17.11&current_weather=true&daily=sunrise,sunset&timezone=Europe%2FBratislava",
-      { next: { revalidate: 300 }, signal: controller.signal }
-    );
-    if (!res.ok) throw new Error("weather");
-    const data = (await res.json()) as {
-      current_weather?: { weathercode?: number };
-      daily?: { sunrise?: string[]; sunset?: string[] };
-    };
-    const code = data && data.current_weather && data.current_weather.weathercode;
-    const weather: Weather = typeof code === "number" ? mapWeatherCode(code) : "clear";
-    const sunrise = data && data.daily && data.daily.sunrise && data.daily.sunrise[0];
-    const sunset = data && data.daily && data.daily.sunset && data.daily.sunset[0];
-    return {
-      weather,
-      sunriseH: sunrise ? parseIsoHour(sunrise) : 6,
-      sunsetH: sunset ? parseIsoHour(sunset) : 20,
-    };
+    const res = await fetch(url, { next: { revalidate: 300 }, signal: controller.signal });
+    if (!res.ok) return null;
+    return (await res.json()) as OpenMeteoResp;
   } catch {
-    return { weather: "clear", sunriseH: 6, sunsetH: 20 };
+    return null;
   } finally {
     clearTimeout(timeout);
   }
+}
+
+function cityFrom(data: OpenMeteoResp | null): CityConditions {
+  const code = data && data.current_weather && data.current_weather.weathercode;
+  const temp = data && data.current_weather && data.current_weather.temperature;
+  return {
+    weather: typeof code === "number" ? mapWeatherCode(code) : "clear",
+    temperature: typeof temp === "number" ? temp : null,
+  };
+}
+
+// Bratislava (drives scene) + Split (destination) weather in parallel.
+// Cached 5 min server-side via Next fetch cache; 2 s per-request timeout.
+async function fetchConditions(): Promise<Conditions> {
+  const braUrl =
+    "https://api.open-meteo.com/v1/forecast?latitude=48.15&longitude=17.11&current_weather=true&daily=sunrise,sunset&timezone=Europe%2FBratislava";
+  const splitUrl =
+    "https://api.open-meteo.com/v1/forecast?latitude=43.51&longitude=16.44&current_weather=true&timezone=Europe%2FZagreb";
+  const [bra, split] = await Promise.all([omFetch(braUrl), omFetch(splitUrl)]);
+  const braCity = cityFrom(bra);
+  const splitCity = cityFrom(split);
+  const sunrise = bra && bra.daily && bra.daily.sunrise && bra.daily.sunrise[0];
+  const sunset = bra && bra.daily && bra.daily.sunset && bra.daily.sunset[0];
+  return {
+    weather: braCity.weather,
+    temperature: braCity.temperature,
+    sunriseH: sunrise ? parseIsoHour(sunrise) : 6,
+    sunsetH: sunset ? parseIsoHour(sunset) : 20,
+    split: splitCity,
+  };
 }
 
 // Current local hour in Bratislava (decimal), regardless of server TZ.
@@ -100,6 +136,55 @@ function computeSunPosition(
   const left = 12 + progress * 76;                              // 12% at sunrise → 88% at sunset
   const top = 78 - Math.sin(angle) * 58;                        // 78% at horizon → 20% at noon
   return { left, top, visible: true };
+}
+
+// Moon arcs between sunset and next sunrise. Not astronomically accurate — the moon
+// doesn't actually rise/set at the sun's hours — but for a background TV scene the
+// feel of "moon up at night" is the goal.
+function computeMoonPosition(
+  hourBA: number,
+  sunriseH: number,
+  sunsetH: number
+): { left: number; top: number; visible: boolean } {
+  let h = hourBA < sunriseH ? hourBA + 24 : hourBA;
+  const nightStart = sunsetH;
+  const nightEnd = sunriseH + 24;
+  if (h < nightStart || h > nightEnd || nightEnd <= nightStart) {
+    return { left: 50, top: 120, visible: false };
+  }
+  const progress = (h - nightStart) / (nightEnd - nightStart);
+  const angle = progress * Math.PI;
+  const left = 12 + progress * 76;
+  const top = 78 - Math.sin(angle) * 58;
+  return { left, top, visible: true };
+}
+
+// Synodic-month math against a known new-moon epoch.
+// Reference new moon: 2000-01-06 18:14 UT = JD 2451550.1.
+// phase: 0..1 fraction of synodic month (0 = new, 0.5 = full).
+// illumination: 0 at new, 1 at full, smooth between.
+function computeMoonPhase(nowMs: number): { phase: number; illumination: number } {
+  const jd = nowMs / 86400000 + 2440587.5;
+  const synodic = 29.530588853;
+  let phase = ((jd - 2451550.1) % synodic) / synodic;
+  if (phase < 0) phase += 1;
+  const illumination = (1 - Math.cos(phase * 2 * Math.PI)) / 2;
+  return { phase, illumination };
+}
+
+// Sky palette phase. Dawn/dusk bands are ±75 min either side of sunrise/sunset;
+// outside those, "day" between them and "night" outside.
+function computeSkyPhase(hourBA: number, sunriseH: number, sunsetH: number): SkyPhase {
+  const pad = 1.25;
+  if (hourBA >= sunriseH - pad && hourBA <= sunriseH + pad) return "dawn";
+  if (hourBA >= sunsetH - pad && hourBA <= sunsetH + pad) return "dusk";
+  if (hourBA > sunriseH + pad && hourBA < sunsetH - pad) return "day";
+  return "night";
+}
+
+function formatTemp(t: number | null): string {
+  if (t === null) return "—";
+  return Math.round(t) + "°";
 }
 
 function pad2(n: number): string {
@@ -174,12 +259,24 @@ function Cloud({ className }: { className: string }) {
 
 export default async function Page() {
   const nowMs = Date.now();
-  const { weather, sunriseH, sunsetH } = await fetchConditions();
+  const cond = await fetchConditions();
+  const weather = cond.weather;
   const hourBA = currentBratislavaHour(new Date(nowMs));
-  const sun = computeSunPosition(hourBA, sunriseH, sunsetH);
+  const sun = computeSunPosition(hourBA, cond.sunriseH, cond.sunsetH);
+  const moon = computeMoonPosition(hourBA, cond.sunriseH, cond.sunsetH);
+  const moonPhase = computeMoonPhase(nowMs);
+  const skyPhase = computeSkyPhase(hourBA, cond.sunriseH, cond.sunsetH);
   const t = compute(nowMs);
   const cloudy = weather === "cloudy" || weather === "rain" || weather === "snow" || weather === "storm";
   const showClouds = weather === "partly" || cloudy;
+
+  // Two-circle moon: a light disc + an offset shadow disc clipped to it.
+  // Offset direction/magnitude encodes phase. Formula matches lens-intersection
+  // geometry so crescent/gibbous silhouettes come out correct.
+  const moonShadowOffset =
+    moonPhase.phase < 0.5 ? moonPhase.phase * 200 : (1 - moonPhase.phase) * 200;
+  const moonShadowCx = moonPhase.phase < 0.5 ? -moonShadowOffset : moonShadowOffset;
+  const moonOpacity = 0.3 + moonPhase.illumination * 0.7;
 
   // ES5-safe ticker. Updates each digit cell individually so the italic
   // numbers don't shift horizontally when the value changes.
@@ -199,7 +296,7 @@ export default async function Page() {
   }
 
   return (
-    <main className={"stage weather-" + weather}>
+    <main className={"stage weather-" + weather + " sky-" + skyPhase}>
       <div className="sky" aria-hidden="true" />
 
       <div className={"stars stars-" + weather} aria-hidden="true">
@@ -224,6 +321,34 @@ export default async function Page() {
         <div className={"sun-layer sun-layer-" + weather} aria-hidden="true">
           <div className="sun-glow" style={{ left: sun.left + "%", top: sun.top + "%" }} />
           <div className="sun-disc" style={{ left: sun.left + "%", top: sun.top + "%" }} />
+        </div>
+      )}
+
+      {moon.visible && (
+        <div
+          className={"moon-layer moon-layer-" + weather}
+          aria-hidden="true"
+          style={{ opacity: moonOpacity }}
+        >
+          <svg
+            className="moon"
+            viewBox="-55 -55 110 110"
+            style={{ left: moon.left + "%", top: moon.top + "%" }}
+          >
+            <defs>
+              <clipPath id="moonClip">
+                <circle cx="0" cy="0" r="50" />
+              </clipPath>
+            </defs>
+            <circle cx="0" cy="0" r="50" fill="#f3e9d2" />
+            <circle
+              cx={moonShadowCx}
+              cy="0"
+              r="50"
+              fill="#0a1a2a"
+              clipPath="url(#moonClip)"
+            />
+          </svg>
         </div>
       )}
 
@@ -340,8 +465,9 @@ export default async function Page() {
 
       <div className="content">
         <div className="topbar">
-          <span>Viede&#328; &#10022; Split &middot; HR</span>
-          <span>27 &middot; 06 &middot; 2026</span>
+          <span className="tb-city">{`BA · ${formatTemp(cond.temperature)} · ${weatherLabel(cond.weather)}`}</span>
+          <span className="tb-route">Viede&#328; &#10022; Split &middot; HR</span>
+          <span className="tb-city">{`SPLIT · ${formatTemp(cond.split.temperature)} · ${weatherLabel(cond.split.weather)} · 27.06.2026`}</span>
         </div>
         <div className="rule" />
 
