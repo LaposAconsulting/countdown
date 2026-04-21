@@ -232,6 +232,21 @@ const RAIN = (() => {
   return arr;
 })();
 
+// Deterministic sparkles on the water — sun/moon glitter on wave crests.
+const GLITTER = (() => {
+  const arr: Array<{ x: number; y: number; s: number; d: number; o: number }> = [];
+  for (let i = 0; i < 26; i++) {
+    arr.push({
+      x: (i * 619) % 100,
+      y: 84 + ((i * 37) % 140) / 10, // 84–98% vertically (inside the wave area)
+      s: 1 + (i % 2),
+      d: (i * 0.31) % 3,
+      o: 0.4 + ((i * 13) % 50) / 100,
+    });
+  }
+  return arr;
+})();
+
 // Deterministic snow flakes.
 const SNOW = (() => {
   const arr: Array<{ x: number; d: number; du: number; s: number; o: number }> = [];
@@ -408,14 +423,80 @@ export default async function Page() {
         </div>
       </div>
 
+      {moon.visible && (
+        <div
+          className="reflection reflection-moon"
+          aria-hidden="true"
+          style={{ left: moon.left + "%", opacity: 0.25 + moonPhase.illumination * 0.55 }}
+        />
+      )}
+
+      <div className="glitter" aria-hidden="true">
+        {GLITTER.map((g, i) => (
+          <span
+            key={i}
+            className="glit"
+            style={{
+              left: g.x + "%",
+              top: g.y + "%",
+              width: g.s + "px",
+              height: g.s + "px",
+              opacity: g.o,
+              WebkitAnimationDelay: g.d + "s",
+              animationDelay: g.d + "s",
+            }}
+          />
+        ))}
+      </div>
+
       <div className="cat" aria-hidden="true">
-        <svg width="98" height="78" viewBox="0 0 220 180" fill="#020a16">
-          <path d="M110 18 L110 118 L182 118 Z" />
-          <path d="M110 36 L110 112 L62 112 Z" />
-          <rect x="109" y="18" width="2.2" height="104" />
-          <path d="M48 124 L196 124 L188 130 L56 130 Z" opacity="0.85" />
-          <path d="M30 130 Q62 138 102 134 L102 146 Q60 150 26 142 Z" />
-          <path d="M118 134 Q158 138 196 130 L198 142 Q158 150 120 146 Z" />
+        <svg className="cat-svg" viewBox="0 0 320 300" fill="#020a16">
+          {/* Mast — tall spine with a masthead cap */}
+          <rect x="158" y="6" width="3.2" height="236" />
+          <rect x="153" y="4" width="12" height="5" />
+
+          {/* Gennaker — large curved headsail on the fore triangle */}
+          <path d="M 158 30 Q 68 158 74 242 L 158 242 Z" opacity="0.82" />
+
+          {/* Mainsail — wind-filled (curved leech) */}
+          <path d="M 158 12 Q 260 136 228 242 L 158 242 Z" />
+
+          {/* Boom */}
+          <rect x="158" y="242" width="72" height="3" />
+
+          {/* Rigging stays (shrouds + forestay) */}
+          <path d="M 160 18 L 16 260" stroke="#020a16" strokeWidth="1" opacity="0.5" fill="none" />
+          <path d="M 160 18 L 304 260" stroke="#020a16" strokeWidth="1" opacity="0.5" fill="none" />
+          <path d="M 160 38 L 160 260" stroke="#020a16" strokeWidth="0.8" opacity="0.35" fill="none" />
+
+          {/* Bimini sun cover over the cockpit */}
+          <path d="M 80 248 L 240 248 L 228 258 L 92 258 Z" opacity="0.82" />
+          <rect x="80" y="248" width="3" height="14" opacity="0.7" />
+          <rect x="237" y="248" width="3" height="14" opacity="0.7" />
+
+          {/* Bridge deck / salon */}
+          <path d="M 62 262 L 258 262 L 244 278 L 76 278 Z" />
+
+          {/* Warm lit cabin windows — glow that reads at every sky phase */}
+          <g className="cat-windows">
+            <rect x="84"  y="267" width="16" height="6" />
+            <rect x="104" y="267" width="16" height="6" />
+            <rect x="124" y="267" width="16" height="6" />
+            <rect x="144" y="267" width="16" height="6" />
+            <rect x="164" y="267" width="16" height="6" />
+            <rect x="184" y="267" width="16" height="6" />
+            <rect x="204" y="267" width="16" height="6" />
+            <rect x="224" y="267" width="16" height="6" />
+          </g>
+
+          {/* Port hull (bow to the left) — long, sleek, slightly cambered */}
+          <path d="M 16 282 Q 70 288 150 284 L 150 290 Q 70 292 14 288 Q 10 285 16 282 Z" />
+          {/* Starboard hull (bow to the right) */}
+          <path d="M 170 284 Q 250 288 304 282 Q 310 285 306 288 Q 250 292 170 290 Z" />
+
+          {/* Subtle water wake under each hull */}
+          <path d="M 24 294 Q 82 296 146 294" stroke="#f3e9d2" strokeWidth="1.2" opacity="0.18" fill="none" />
+          <path d="M 174 294 Q 238 296 296 294" stroke="#f3e9d2" strokeWidth="1.2" opacity="0.18" fill="none" />
         </svg>
       </div>
 

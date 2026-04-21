@@ -180,6 +180,9 @@ html, body {
   height: 4%;
   opacity: 0.9;
 }
+.sky-day   .islands path { fill: #1f3a58; }
+.sky-dawn  .islands path { fill: #271e3a; }
+.sky-night .islands path { fill: #050d1c; }
 
 /* ----- Waves ----- */
 .waves {
@@ -204,15 +207,91 @@ html, body {
 @-webkit-keyframes wave-c { from { -webkit-transform: translate(-4%,0); } to { -webkit-transform: translate(-54%,0); } }
 @keyframes wave-c { from { transform: translate(-4%,0); } to { transform: translate(-54%,0); } }
 
+/* Wave colours shift with the sky phase. Inline `fill=` on the SVG path is a
+   presentation attribute (lowest CSS priority), so these class selectors cleanly
+   override it without touching the markup. Default (dusk) keeps the sunset look. */
+.sky-day .wave-c svg path { fill: #7db2d5; }
+.sky-day .wave-b svg path { fill: #4d8cbf; }
+.sky-day .wave-a svg path { fill: #2b5c8a; }
+
+.sky-dawn .wave-c svg path { fill: #6b6a90; }
+.sky-dawn .wave-b svg path { fill: #3c456a; }
+.sky-dawn .wave-a svg path { fill: #141c38; }
+
+.sky-night .wave-c svg path { fill: #0a2346; }
+.sky-night .wave-b svg path { fill: #05162f; }
+.sky-night .wave-a svg path { fill: #020a1c; }
+
+/* Heavy weather dulls the water colour a touch for every phase. */
+.weather-rain .waves, .weather-storm .waves { opacity: 0.9; }
+
+/* ----- Water: reflections & glitter -----
+   Reflection is a vertical warm band under the sun (or cool band under the moon),
+   centered on the body's current `left`% from page.tsx. Glitter are tiny twinkling
+   dots across the wave area — reuses the existing `twinkle` keyframe. */
+.reflection {
+  position: absolute;
+  top: 80%; bottom: 0;
+  width: 96px;
+  margin-left: -48px;
+  pointer-events: none;
+}
+.reflection-moon {
+  width: 56px;
+  margin-left: -28px;
+  background: -webkit-linear-gradient(top,
+    rgba(243,233,210,0.5) 0%,
+    rgba(200,215,240,0.18) 50%,
+    rgba(200,215,240,0) 100%);
+  background: linear-gradient(to bottom,
+    rgba(243,233,210,0.5) 0%,
+    rgba(200,215,240,0.18) 50%,
+    rgba(200,215,240,0) 100%);
+}
+/* Dim the reflections when clouds/storm are covering the light source. */
+.weather-cloudy .reflection, .weather-fog .reflection { opacity: 0.4; }
+.weather-rain .reflection, .weather-snow .reflection { opacity: 0.25; }
+.weather-storm .reflection { opacity: 0.12; }
+
+.glitter {
+  position: absolute;
+  left: 0; right: 0; top: 0; bottom: 0;
+  pointer-events: none;
+}
+.glit {
+  position: absolute;
+  background: #fff3c8;
+  border-radius: 50%;
+  -webkit-animation: twinkle 2.6s ease-in-out infinite;
+  animation: twinkle 2.6s ease-in-out infinite;
+}
+/* Glitter tint follows the sky — warm at dusk, cool under moonlight, crisp by day. */
+.sky-day   .glit { background: #ffffff; }
+.sky-dawn  .glit { background: #ffddc0; }
+.sky-dusk  .glit { background: #fff0c2; }
+.sky-night .glit { background: #d5e0f3; opacity: 0.6; }
+/* Heavier weather softens every sparkle. */
+.weather-cloudy .glit, .weather-fog .glit { opacity: 0.45; }
+.weather-rain .glit, .weather-snow .glit, .weather-storm .glit { opacity: 0.3; }
+
 /* ----- Catamaran ----- */
 .cat {
   position: absolute;
   left: 42%;
-  top: 82%;
-  margin-left: -49px;
+  top: 58%;
+  margin-left: -210px;
   -webkit-animation: bob 5.5s ease-in-out infinite;
   animation: bob 5.5s ease-in-out infinite;
 }
+.cat-svg {
+  display: block;
+  width: 420px;
+  height: 394px;
+}
+/* Warm lit cabin windows — inviting glow that shows against every sky phase. */
+.cat-windows rect { fill: #ffcf73; opacity: 0.88; }
+.sky-night .cat-windows rect, .sky-dusk .cat-windows rect { opacity: 0.95; }
+.sky-day   .cat-windows rect { fill: #ffdd99; opacity: 0.75; }
 @-webkit-keyframes bob {
   0%, 100% { -webkit-transform: translateY(0) rotate(-1.2deg); }
   50%      { -webkit-transform: translateY(-6px) rotate(1.2deg); }
@@ -390,6 +469,8 @@ html, body {
   .lbl { font-size: 14px; letter-spacing: 7px; margin-top: 24px; }
   .sun-glow { width: 420px; height: 420px; margin-left: -210px; margin-top: -210px; }
   .sun-disc { width: 78px; height: 78px; margin-left: -39px; margin-top: -39px; }
+  .cat-svg { width: 320px; height: 300px; }
+  .cat { margin-left: -160px; top: 62%; }
 }
 
 /* 4K TVs */
@@ -402,6 +483,8 @@ html, body {
   .lbl { font-size: 28px; letter-spacing: 14px; margin-top: 48px; }
   .sun-glow { width: 820px; height: 820px; margin-left: -410px; margin-top: -410px; }
   .sun-disc { width: 160px; height: 160px; margin-left: -80px; margin-top: -80px; }
+  .cat-svg { width: 620px; height: 580px; }
+  .cat { margin-left: -310px; top: 54%; }
 }
 
 /* =================================================================
