@@ -1,13 +1,23 @@
-// Server-rendered countdown for a 2014 Samsung TV browser.
+// Server-rendered countdown CAROUSEL for a 2014 Samsung TV browser.
 // Zero modern JS / CSS features on the wire.
+// Four slides rotate every ROTATE_MS (3 min). The active slide is picked
+// deterministically from the clock (floor(now/ROTATE_MS) % N) so the rotation
+// survives the layout.tsx <meta refresh=30> reload — no client state to lose.
 // Initial values are SSR'd so the page works with JS disabled.
-// A tiny ES5 ticker updates values every second;
-// layout.tsx sets <meta refresh=30> as a safety net.
+// A tiny ES5 ticker updates every countdown and swaps the active slide each second.
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const TARGET_MS = new Date("2026-06-27T00:00:00+02:00").getTime();
+// ----- Carousel timing -----
+const ROTATE_MS = 180000; // 3 minutes per slide
+const GRID_MS = 300000; // 5 minutes for the grid (all-countdowns) view
+
+// ----- Countdown targets -----
+const TB_TARGET_MS = new Date("2026-06-27T00:00:00+02:00").getTime();   // Teambuilding Vol. II — Split
+const NR_TARGET_MS = new Date("2026-09-05T20:00:00+02:00").getTime();   // Telekom Night Run — Bratislava
+const GTA_TARGET_MS = new Date("2026-11-19T00:00:00+01:00").getTime();  // GTA VI release
+const FABLE_OFFLINE_MS = new Date("2026-06-12T00:00:00+02:00").getTime(); // Fable 5 went offline — count UP
 
 type Weather = "clear" | "partly" | "cloudy" | "fog" | "rain" | "snow" | "storm";
 type SkyPhase = "night" | "dawn" | "day" | "dusk";
@@ -105,6 +115,36 @@ async function fetchConditions(): Promise<Conditions> {
   };
 }
 
+// Live check of https://isfable5back.com/ — is claude-fable-5 available again?
+// Conservative: defaults to offline on any failure or ambiguity. 2 s timeout,
+// cached 60 s server-side (the site itself polls Anthropic every minute).
+async function fetchFableBack(): Promise<boolean> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 2000);
+  try {
+    const res = await fetch("https://isfable5back.com/", {
+      next: { revalidate: 60 },
+      signal: controller.signal,
+    });
+    if (!res.ok) return false;
+    const html = (await res.text()).toLowerCase();
+    const offline =
+      html.indexOf("not available") >= 0 ||
+      html.indexOf("offline") >= 0 ||
+      html.indexOf("unavailable") >= 0 ||
+      html.indexOf("suspended") >= 0;
+    const back =
+      html.indexOf("is back") >= 0 ||
+      html.indexOf("now available") >= 0 ||
+      html.indexOf("back online") >= 0;
+    return back && !offline;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 // Current local hour in Bratislava (decimal), regardless of server TZ.
 function currentBratislavaHour(now: Date): number {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -187,13 +227,11 @@ function formatTemp(t: number | null): string {
   return Math.round(t) + "°";
 }
 
-function pad2(n: number): string {
-  const s = String(n);
-  return s.length < 2 ? "0" + s : s;
-}
+type TimeParts = { d: number; h: number; m: number; s: number };
 
-function compute(nowMs: number) {
-  let ms = TARGET_MS - nowMs;
+// Time remaining until a target (countdown). Clamped at zero.
+function compute(nowMs: number, target: number): TimeParts {
+  let ms = target - nowMs;
   if (ms < 0) ms = 0;
   return {
     d: Math.floor(ms / 86400000),
@@ -201,6 +239,11 @@ function compute(nowMs: number) {
     m: Math.floor((ms % 3600000) / 60000),
     s: Math.floor((ms % 60000) / 1000),
   };
+}
+
+// Time elapsed since an epoch (count-up). Clamped at zero.
+function computeUp(nowMs: number, epoch: number): TimeParts {
+  return compute(0, nowMs - epoch);
 }
 
 // Deterministic star positions (same every render so SSR and client match)
@@ -272,46 +315,221 @@ function Cloud({ className }: { className: string }) {
   );
 }
 
-export default async function Page() {
-  const nowMs = Date.now();
-  const cond = await fetchConditions();
+// A single fixed-width digit group. Splitting into per-digit cells keeps the
+// numbers from shifting horizontally when a value changes. `min` is the
+// minimum number of cells (days can grow to 3; h/m/s are always 2).
+function DigitGroup({ id, value, min = 2 }: { id: string; value: number; min?: number }) {
+  const raw = String(value);
+  const len = Math.max(min, raw.length);
+  const s = raw.length < len ? "0".repeat(len - raw.length) + raw : raw;
+  const chars: string[] = [];
+  for (let i = 0; i < s.length; i++) chars.push(s.charAt(i));
+  return (
+    <span id={id} className="num">
+      {chars.map((c, i) => (
+        // Text is rewritten imperatively by the ES5 ticker — React must not
+        // reconcile it on hydration (it may differ by the time JS first runs).
+        <span key={i} id={id + "-" + i} className="dig" suppressHydrationWarning>
+          {c}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+// The four-unit countdown row, reused by every slide for a consistent feel.
+function Countdown({
+  prefix,
+  t,
+  labels,
+}: {
+  prefix: string;
+  t: TimeParts;
+  labels: [string, string, string, string];
+}) {
+  return (
+    <div
+      className="countdown rise"
+      style={{ WebkitAnimationDelay: "160ms", animationDelay: "160ms" }}
+    >
+      <div className="cell">
+        <DigitGroup id={prefix + "-d"} value={t.d} min={2} />
+        <span className="lbl">{labels[0]}</span>
+      </div>
+      <div className="cell">
+        <DigitGroup id={prefix + "-h"} value={t.h} min={2} />
+        <span className="lbl">{labels[1]}</span>
+      </div>
+      <div className="cell">
+        <DigitGroup id={prefix + "-m"} value={t.m} min={2} />
+        <span className="lbl">{labels[2]}</span>
+      </div>
+      <div className="cell">
+        <DigitGroup id={prefix + "-s"} value={t.s} min={2} />
+        <span className="lbl">{labels[3]}</span>
+      </div>
+    </div>
+  );
+}
+
+// One d/h/m/s unit for a grid cell (number stacked over its label).
+function GUnit({ id, v, lbl }: { id: string; v: number; lbl: string }) {
+  return (
+    <div className="gunit">
+      <DigitGroup id={id} value={v} min={2} />
+      <span className="glbl">{lbl}</span>
+    </div>
+  );
+}
+
+// A single tile in the all-countdowns grid view. Its digit ids carry a "g"
+// prefix so the ticker updates them alongside the full-screen slides.
+function GridCell({
+  cls,
+  kicker,
+  title,
+  meta,
+  prefix,
+  t,
+  labels,
+  watermark,
+  scene,
+}: {
+  cls: string;
+  kicker: string;
+  title: string;
+  meta: string;
+  prefix: string;
+  t: TimeParts;
+  labels: [string, string, string, string];
+  watermark?: string;
+  scene?: React.ReactNode;
+}) {
+  return (
+    <div className="gcell">
+      <div className={"gcell-card " + cls}>
+        {scene}
+        <div className="gcell-scrim" />
+        {watermark && (
+          <div className="gcell-wm" aria-hidden="true">
+            {watermark}
+          </div>
+        )}
+        <div className="gcell-inner">
+          <div className="gcell-kicker">{kicker}</div>
+          <div className="gcell-title">{title}</div>
+          <div className="gcell-cd">
+            <GUnit id={prefix + "-d"} v={t.d} lbl={labels[0]} />
+            <GUnit id={prefix + "-h"} v={t.h} lbl={labels[1]} />
+            <GUnit id={prefix + "-m"} v={t.m} lbl={labels[2]} />
+            <GUnit id={prefix + "-s"} v={t.s} lbl={labels[3]} />
+          </div>
+          <div className="gcell-meta">{meta}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// The catamaran silhouette — shared by the full scene and the grid tile.
+function CatamaranSvg({ className }: { className: string }) {
+  return (
+    <svg className={className} viewBox="0 0 320 300" fill="#020a16">
+      {/* Mast — tall spine with a masthead cap */}
+      <rect x="158" y="6" width="3.2" height="236" />
+      <rect x="153" y="4" width="12" height="5" />
+      {/* Gennaker — large curved headsail on the fore triangle */}
+      <path d="M 158 30 Q 68 158 74 242 L 158 242 Z" opacity="0.82" />
+      {/* Mainsail — wind-filled (curved leech) */}
+      <path d="M 158 12 Q 260 136 228 242 L 158 242 Z" />
+      {/* Boom */}
+      <rect x="158" y="242" width="72" height="3" />
+      {/* Rigging stays (shrouds + forestay) */}
+      <path d="M 160 18 L 16 260" stroke="#020a16" strokeWidth="1" opacity="0.5" fill="none" />
+      <path d="M 160 18 L 304 260" stroke="#020a16" strokeWidth="1" opacity="0.5" fill="none" />
+      <path d="M 160 38 L 160 260" stroke="#020a16" strokeWidth="0.8" opacity="0.35" fill="none" />
+      {/* Bimini sun cover over the cockpit */}
+      <path d="M 80 248 L 240 248 L 228 258 L 92 258 Z" opacity="0.82" />
+      <rect x="80" y="248" width="3" height="14" opacity="0.7" />
+      <rect x="237" y="248" width="3" height="14" opacity="0.7" />
+      {/* Bridge deck / salon */}
+      <path d="M 62 262 L 258 262 L 244 278 L 76 278 Z" />
+      {/* Warm lit cabin windows */}
+      <g className="cat-windows">
+        <rect x="84"  y="267" width="16" height="6" />
+        <rect x="104" y="267" width="16" height="6" />
+        <rect x="124" y="267" width="16" height="6" />
+        <rect x="144" y="267" width="16" height="6" />
+        <rect x="164" y="267" width="16" height="6" />
+        <rect x="184" y="267" width="16" height="6" />
+        <rect x="204" y="267" width="16" height="6" />
+        <rect x="224" y="267" width="16" height="6" />
+      </g>
+      {/* Port hull (bow to the left) */}
+      <path d="M 16 282 Q 70 288 150 284 L 150 290 Q 70 292 14 288 Q 10 285 16 282 Z" />
+      {/* Starboard hull (bow to the right) */}
+      <path d="M 170 284 Q 250 288 304 282 Q 310 285 306 288 Q 250 292 170 290 Z" />
+      {/* Subtle water wake under each hull */}
+      <path d="M 24 294 Q 82 296 146 294" stroke="#f3e9d2" strokeWidth="1.2" opacity="0.18" fill="none" />
+      <path d="M 174 294 Q 238 296 296 294" stroke="#f3e9d2" strokeWidth="1.2" opacity="0.18" fill="none" />
+    </svg>
+  );
+}
+
+// Compact, static catamaran-at-sunset scene for the grid tile.
+function TbMiniScene() {
+  return (
+    <div className="gtb-scene" aria-hidden="true">
+      <span className="gtb-sun" />
+      <svg className="gtb-islands" viewBox="0 0 1200 60" preserveAspectRatio="none">
+        <path
+          d="M0 55 L90 42 L160 50 L230 30 L340 48 L430 38 L540 52 L640 30 L760 48 L860 42 L970 50 L1060 36 L1200 50 L1200 60 L0 60 Z"
+          fill="#0a2a48"
+          opacity="0.85"
+        />
+      </svg>
+      <div className="gtb-waves">
+        <svg className="gtb-wave gtb-wave-b" viewBox="0 0 2400 200" preserveAspectRatio="none">
+          <path d="M0 80 C180 40, 360 130, 600 80 C840 30, 1020 130, 1200 80 C1380 30, 1560 130, 1800 80 C2040 30, 2220 130, 2400 80 L2400 200 L0 200 Z" fill="#0e3a5c" />
+        </svg>
+        <svg className="gtb-wave gtb-wave-a" viewBox="0 0 2400 200" preserveAspectRatio="none">
+          <path d="M0 90 C160 40, 320 140, 600 90 C880 40, 1040 140, 1200 90 C1360 40, 1520 140, 1800 90 C2080 40, 2240 140, 2400 90 L2400 200 L0 200 Z" fill="#062138" />
+        </svg>
+      </div>
+      <CatamaranSvg className="gtb-cat" />
+    </div>
+  );
+}
+
+// ============================================================================
+// Slide 1 — Teambuilding Vol. II (live Bratislava weather scene → Split)
+// ============================================================================
+function TeambuildingScene({
+  cond,
+  sun,
+  moon,
+  moonPhase,
+  nowMs,
+}: {
+  cond: Conditions;
+  sun: { left: number; top: number; visible: boolean };
+  moon: { left: number; top: number; visible: boolean };
+  moonPhase: { phase: number; illumination: number };
+  nowMs: number;
+}) {
   const weather = cond.weather;
-  const hourBA = currentBratislavaHour(new Date(nowMs));
-  const sun = computeSunPosition(hourBA, cond.sunriseH, cond.sunsetH);
-  const moon = computeMoonPosition(hourBA, cond.sunriseH, cond.sunsetH);
-  const moonPhase = computeMoonPhase(nowMs);
-  const skyPhase = computeSkyPhase(hourBA, cond.sunriseH, cond.sunsetH);
-  const t = compute(nowMs);
   const cloudy = weather === "cloudy" || weather === "rain" || weather === "snow" || weather === "storm";
   const showClouds = weather === "partly" || cloudy;
+  const t = compute(nowMs, TB_TARGET_MS);
 
   // Two-circle moon: a light disc + an offset shadow disc clipped to it.
-  // Offset direction/magnitude encodes phase. Formula matches lens-intersection
-  // geometry so crescent/gibbous silhouettes come out correct.
   const moonShadowOffset =
     moonPhase.phase < 0.5 ? moonPhase.phase * 200 : (1 - moonPhase.phase) * 200;
   const moonShadowCx = moonPhase.phase < 0.5 ? -moonShadowOffset : moonShadowOffset;
   const moonOpacity = 0.3 + moonPhase.illumination * 0.7;
 
-  // ES5-safe ticker. Updates each digit cell individually so the italic
-  // numbers don't shift horizontally when the value changes.
-  const tickerJs =
-    "(function(){var T=" +
-    TARGET_MS +
-    ";function pad(n){n=String(n);return n.length<2?'0'+n:n;}function setDigits(id,val){var s=pad(val);var a=document.getElementById(id+'-0');var b=document.getElementById(id+'-1');if(a&&a.firstChild)a.firstChild.nodeValue=s.charAt(0);else if(a)a.innerHTML=s.charAt(0);if(b&&b.firstChild)b.firstChild.nodeValue=s.charAt(1);else if(b)b.innerHTML=s.charAt(1);}function tick(){var m=T-(new Date()).getTime();if(m<0)m=0;setDigits('cd-d',Math.floor(m/86400000));setDigits('cd-h',Math.floor((m%86400000)/3600000));setDigits('cd-m',Math.floor((m%3600000)/60000));setDigits('cd-s',Math.floor((m%60000)/1000));}tick();setInterval(tick,1000);})();";
-
-  function Num({ id, value }: { id: string; value: number }) {
-    const s = pad2(value);
-    return (
-      <span id={id} className="num">
-        <span id={id + "-0"} className="dig">{s.charAt(0)}</span>
-        <span id={id + "-1"} className="dig">{s.charAt(1)}</span>
-      </span>
-    );
-  }
-
   return (
-    <main className={"stage weather-" + weather + " sky-" + skyPhase}>
+    <>
       <div className="sky" aria-hidden="true" />
 
       <div className={"stars stars-" + weather} aria-hidden="true">
@@ -356,13 +574,7 @@ export default async function Page() {
               </clipPath>
             </defs>
             <circle cx="0" cy="0" r="50" fill="#f3e9d2" />
-            <circle
-              cx={moonShadowCx}
-              cy="0"
-              r="50"
-              fill="#0a1a2a"
-              clipPath="url(#moonClip)"
-            />
+            <circle cx={moonShadowCx} cy="0" r="50" fill="#0a1a2a" clipPath="url(#moonClip)" />
           </svg>
         </div>
       )}
@@ -383,12 +595,7 @@ export default async function Page() {
         </div>
       )}
 
-      <svg
-        className="islands"
-        viewBox="0 0 1200 60"
-        preserveAspectRatio="none"
-        aria-hidden="true"
-      >
+      <svg className="islands" viewBox="0 0 1200 60" preserveAspectRatio="none" aria-hidden="true">
         <path
           d="M0 55 L90 42 L160 50 L230 30 L340 48 L430 38 L540 52 L640 30 L760 48 L860 42 L970 50 L1060 36 L1200 50 L1200 60 L0 60 Z"
           fill="#071a33"
@@ -450,54 +657,7 @@ export default async function Page() {
       </div>
 
       <div className="cat" aria-hidden="true">
-        <svg className="cat-svg" viewBox="0 0 320 300" fill="#020a16">
-          {/* Mast — tall spine with a masthead cap */}
-          <rect x="158" y="6" width="3.2" height="236" />
-          <rect x="153" y="4" width="12" height="5" />
-
-          {/* Gennaker — large curved headsail on the fore triangle */}
-          <path d="M 158 30 Q 68 158 74 242 L 158 242 Z" opacity="0.82" />
-
-          {/* Mainsail — wind-filled (curved leech) */}
-          <path d="M 158 12 Q 260 136 228 242 L 158 242 Z" />
-
-          {/* Boom */}
-          <rect x="158" y="242" width="72" height="3" />
-
-          {/* Rigging stays (shrouds + forestay) */}
-          <path d="M 160 18 L 16 260" stroke="#020a16" strokeWidth="1" opacity="0.5" fill="none" />
-          <path d="M 160 18 L 304 260" stroke="#020a16" strokeWidth="1" opacity="0.5" fill="none" />
-          <path d="M 160 38 L 160 260" stroke="#020a16" strokeWidth="0.8" opacity="0.35" fill="none" />
-
-          {/* Bimini sun cover over the cockpit */}
-          <path d="M 80 248 L 240 248 L 228 258 L 92 258 Z" opacity="0.82" />
-          <rect x="80" y="248" width="3" height="14" opacity="0.7" />
-          <rect x="237" y="248" width="3" height="14" opacity="0.7" />
-
-          {/* Bridge deck / salon */}
-          <path d="M 62 262 L 258 262 L 244 278 L 76 278 Z" />
-
-          {/* Warm lit cabin windows — glow that reads at every sky phase */}
-          <g className="cat-windows">
-            <rect x="84"  y="267" width="16" height="6" />
-            <rect x="104" y="267" width="16" height="6" />
-            <rect x="124" y="267" width="16" height="6" />
-            <rect x="144" y="267" width="16" height="6" />
-            <rect x="164" y="267" width="16" height="6" />
-            <rect x="184" y="267" width="16" height="6" />
-            <rect x="204" y="267" width="16" height="6" />
-            <rect x="224" y="267" width="16" height="6" />
-          </g>
-
-          {/* Port hull (bow to the left) — long, sleek, slightly cambered */}
-          <path d="M 16 282 Q 70 288 150 284 L 150 290 Q 70 292 14 288 Q 10 285 16 282 Z" />
-          {/* Starboard hull (bow to the right) */}
-          <path d="M 170 284 Q 250 288 304 282 Q 310 285 306 288 Q 250 292 170 290 Z" />
-
-          {/* Subtle water wake under each hull */}
-          <path d="M 24 294 Q 82 296 146 294" stroke="#f3e9d2" strokeWidth="1.2" opacity="0.18" fill="none" />
-          <path d="M 174 294 Q 238 296 296 294" stroke="#f3e9d2" strokeWidth="1.2" opacity="0.18" fill="none" />
-        </svg>
+        <CatamaranSvg className="cat-svg" />
       </div>
 
       {(weather === "rain" || weather === "storm") && (
@@ -551,31 +711,281 @@ export default async function Page() {
           <span className="tb-city">{`SPLIT · ${formatTemp(cond.split.temperature)} · ${weatherLabel(cond.split.weather)} · 27.06.2026`}</span>
         </div>
         <div className="rule" />
-
         <div className="hero">
           <div className="kicker rise">
             Teambuilding <span className="vol">Vol. II</span>
           </div>
-
-          <div className="countdown rise" style={{ WebkitAnimationDelay: "160ms", animationDelay: "160ms" }}>
-            <div className="cell">
-              <Num id="cd-d" value={t.d} />
-              <span className="lbl">dn&iacute;</span>
-            </div>
-            <div className="cell">
-              <Num id="cd-h" value={t.h} />
-              <span className="lbl">hod</span>
-            </div>
-            <div className="cell">
-              <Num id="cd-m" value={t.m} />
-              <span className="lbl">min</span>
-            </div>
-            <div className="cell">
-              <Num id="cd-s" value={t.s} />
-              <span className="lbl">sek</span>
-            </div>
-          </div>
+          <Countdown prefix="tb" t={t} labels={["dní", "hod", "min", "sek"]} />
         </div>
+      </div>
+    </>
+  );
+}
+
+// ============================================================================
+// Slide 2 — Telekom Night Run (Bratislava, magenta neon)
+// ============================================================================
+function NightRunScene({ nowMs }: { nowMs: number }) {
+  const t = compute(nowMs, NR_TARGET_MS);
+  return (
+    <>
+      {/* Full-bleed photo (public/nightrun.jpg) + legibility shade + magenta wash */}
+      <div className="nr-photo" aria-hidden="true" />
+      <div className="nr-shade" aria-hidden="true" />
+      <div className="nr-tint" aria-hidden="true" />
+      <div className="grain" aria-hidden="true" />
+
+      <div className="content">
+        <div className="topbar">
+          <span className="tb-city">TELEKOM</span>
+          <span className="tb-route">BRATISLAVA &middot; SK</span>
+          <span className="tb-city">10 KM &middot; 05.09.2026 &middot; 20:00</span>
+        </div>
+        <div className="rule" />
+        <div className="hero">
+          <div className="kicker rise">
+            Telekom <span className="vol">Night Run</span>
+          </div>
+          <Countdown prefix="nr" t={t} labels={["dní", "hod", "min", "sek"]} />
+          <div className="nr-foot rise">10 KM &middot; NOČNÝ BEH ULICAMI BRATISLAVY</div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ============================================================================
+// Slide 3 — GTA VI (Vice City synthwave)
+// ============================================================================
+function GtaScene({ nowMs }: { nowMs: number }) {
+  const t = compute(nowMs, GTA_TARGET_MS);
+  return (
+    <>
+      {/* Official GTA VI key art (public/gta6.jpg) + poster scrim. */}
+      <div className="gta-photo" aria-hidden="true" />
+      <div className="gta-shade" aria-hidden="true" />
+      <div className="grain" aria-hidden="true" />
+
+      <div className="content">
+        <div className="topbar">
+          <span className="tb-city">ROCKSTAR GAMES</span>
+          <span className="tb-route">VICE CITY &middot; LEONIDA</span>
+          <span className="tb-city">PS5 / XBOX SERIES X|S</span>
+        </div>
+        <div className="rule" />
+        <div className="hero">
+          <div className="gta-title rise">
+            <span className="gta-grand">GRAND THEFT AUTO</span>
+            <span className="gta-vi">VI</span>
+          </div>
+          <Countdown prefix="gta" t={t} labels={["days", "hrs", "min", "sec"]} />
+          <div className="gta-foot rise">PREMI&Eacute;RA &middot; 19 . 11 . 2026</div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ============================================================================
+// Slide 4 — Is Fable 5 back? (live status, count-UP since it went offline)
+// ============================================================================
+function FableScene({ nowMs, back }: { nowMs: number; back: boolean }) {
+  const t = computeUp(nowMs, FABLE_OFFLINE_MS);
+  return (
+    <>
+      <div className={"fb-bg " + (back ? "fb-bg-on" : "fb-bg-off")} aria-hidden="true" />
+      <div className={"fb-glow " + (back ? "fb-glow-on" : "fb-glow-off")} aria-hidden="true" />
+      <div className="fb-mesh" aria-hidden="true" />
+      <div className="grain" aria-hidden="true" />
+
+      <div className="content">
+        <div className="topbar">
+          <span className="tb-city">ISFABLE5BACK.COM</span>
+          <span className="tb-route">CLAUDE &middot; FABLE 5</span>
+          <span className="tb-city">{back ? "200 OK" : "503 UNAVAILABLE"}</span>
+        </div>
+        <div className="rule" />
+
+        <div className={"hero fb-hero " + (back ? "is-on" : "is-off")}>
+          <div className="fb-q rise">IS FABLE 5 BACK?</div>
+          <div className="fb-answer rise">{back ? "YES" : "NO"}</div>
+          <div className="fb-sub rise">
+            {back ? "claude-fable-5 is live again" : "claude-fable-5 is offline"}
+          </div>
+
+          {!back && (
+            <div className="fb-down rise">
+              <div className="fb-eyebrow">OFFLINE FOR</div>
+              <Countdown prefix="fb" t={t} labels={["dní", "hod", "min", "sek"]} />
+              <div className="fb-foot">
+                <span>OFFLINE SINCE 12.06.2026</span>
+                <span className="fb-poll">
+                  <span className="fb-poll-fill" />
+                </span>
+                <span>RE-CHECK 60s</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default async function Page() {
+  const nowMs = Date.now();
+  const [cond, fableBack] = await Promise.all([fetchConditions(), fetchFableBack()]);
+
+  const hourBA = currentBratislavaHour(new Date(nowMs));
+  const sun = computeSunPosition(hourBA, cond.sunriseH, cond.sunsetH);
+  const moon = computeMoonPosition(hourBA, cond.sunriseH, cond.sunsetH);
+  const moonPhase = computeMoonPhase(nowMs);
+  const skyPhase = computeSkyPhase(hourBA, cond.sunriseH, cond.sunsetH);
+
+  // Slides, in rotation order. The teambuilding slide carries the live
+  // weather/sky classes (its scene CSS keys off them).
+  const slides: Array<{ cls: string; name: string; node: React.ReactNode }> = [
+    {
+      cls: "slide-tb weather-" + cond.weather + " sky-" + skyPhase,
+      name: "Teambuilding",
+      node: (
+        <TeambuildingScene cond={cond} sun={sun} moon={moon} moonPhase={moonPhase} nowMs={nowMs} />
+      ),
+    },
+    { cls: "slide-nr", name: "Night Run", node: <NightRunScene nowMs={nowMs} /> },
+    { cls: "slide-gta", name: "GTA VI", node: <GtaScene nowMs={nowMs} /> },
+    { cls: "slide-fable", name: "Fable 5", node: <FableScene nowMs={nowMs} back={fableBack} /> },
+  ];
+
+  // Views = the 4 slides (3 min each) + a grid of all countdowns (5 min).
+  // Active view is picked deterministically by walking the duration schedule,
+  // so it survives the 30 s meta-refresh exactly like the per-slide rotation.
+  const DUR = [ROTATE_MS, ROTATE_MS, ROTATE_MS, ROTATE_MS, GRID_MS];
+  const VIEWS = DUR.length; // 5
+  const GRID_VIEW = 4;
+  const totalCycle = ROTATE_MS * 4 + GRID_MS;
+  let active = 0;
+  {
+    const ph = nowMs % totalCycle;
+    let acc = 0;
+    for (let i = 0; i < DUR.length; i++) {
+      if (ph < acc + DUR[i]) { active = i; break; }
+      acc += DUR[i];
+    }
+  }
+  const navNames = [slides[0].name, slides[1].name, slides[2].name, slides[3].name, "All"];
+
+  // Countdown values for the grid tiles (same maths as the slides).
+  const gTb = compute(nowMs, TB_TARGET_MS);
+  const gNr = compute(nowMs, NR_TARGET_MS);
+  const gGta = compute(nowMs, GTA_TARGET_MS);
+  const gFb = computeUp(nowMs, FABLE_OFFLINE_MS);
+
+  // ES5-safe ticker. Updates every digit cell each second (variable cell count
+  // so days can grow past 99), then paints the active slide + nav.
+  // Active slide = clock-driven (floor(now/R)%N) UNLESS the user has pinned one
+  // by clicking a nav label. The pin lives in location.hash (#s=2) so it persists
+  // across the layout.tsx <meta refresh=30> reload; clicking the active label
+  // again clears the pin and resumes auto-rotation.
+  const tickerJs =
+    "(function(){" +
+    "var R=" + ROTATE_MS + ",G=" + GRID_MS + ",N=" + VIEWS + ";" +
+    "var DUR=[R,R,R,R,G],TOT=R*4+G;" +
+    "var CD=[['tb'," + TB_TARGET_MS + "],['nr'," + NR_TARGET_MS + "],['gta'," + GTA_TARGET_MS + "]," +
+    "['gtb'," + TB_TARGET_MS + "],['gnr'," + NR_TARGET_MS + "],['ggta'," + GTA_TARGET_MS + "]];" +
+    "var UP=[['fb'," + FABLE_OFFLINE_MS + "],['gfb'," + FABLE_OFFLINE_MS + "]];" +
+    "var manual=-1;var mm=String(window.location.hash||'').match(/s=(\\d+)/);if(mm){var mi=parseInt(mm[1],10);if(mi>=0&&mi<N)manual=mi;}" +
+    "function setVar(id,val){var cells=[],i=0,c;while((c=document.getElementById(id+'-'+i))){cells.push(c);i++;}if(!cells.length)return;" +
+    "var s=String(val);while(s.length<cells.length)s='0'+s;if(s.length>cells.length)s=s.substring(s.length-cells.length);" +
+    "for(var j=0;j<cells.length;j++){var ch=s.charAt(j);if(cells[j].firstChild)cells[j].firstChild.nodeValue=ch;else cells[j].innerHTML=ch;}}" +
+    "function units(p,ms){if(ms<0)ms=0;setVar(p+'-d',Math.floor(ms/86400000));setVar(p+'-h',Math.floor((ms%86400000)/3600000));setVar(p+'-m',Math.floor((ms%3600000)/60000));setVar(p+'-s',Math.floor((ms%60000)/1000));}" +
+    "function autoView(now){var ph=now%TOT,acc=0,i;for(i=0;i<N;i++){if(ph<acc+DUR[i])return i;acc+=DUR[i];}return 0;}" +
+    "function paint(idx){var i;for(i=0;i<4;i++){var el=document.getElementById('slide-'+i);if(el)el.style.display=(i===idx)?'block':'none';}" +
+    "var g=document.getElementById('grid-view');if(g)g.style.display=(idx===4)?'block':'none';" +
+    "for(i=0;i<N;i++){var nv=document.getElementById('nav-'+i);if(nv)nv.className='nav-item'+(i===idx?' nav-on':'')+(manual===i?' nav-pin':'');}}" +
+    "function tick(){var now=(new Date()).getTime();var i;for(i=0;i<CD.length;i++){units(CD[i][0],CD[i][1]-now);}for(i=0;i<UP.length;i++){units(UP[i][0],now-UP[i][1]);}" +
+    "paint(manual>=0?manual:autoView(now));}" +
+    "for(var k=0;k<N;k++){(function(j){var nv=document.getElementById('nav-'+j);if(nv){nv.onclick=function(){manual=(manual===j?-1:j);try{window.location.hash=(manual>=0?'s='+manual:'');}catch(e){}tick();};}})(k);}" +
+    "tick();setInterval(tick,1000);" +
+    "})();";
+
+  return (
+    <main className="carousel">
+      {slides.map((sl, i) => (
+        // display + nav className are driven imperatively by the ticker — suppress
+        // hydration reconciliation on the nodes it mutates before React loads.
+        <section
+          key={i}
+          id={"slide-" + i}
+          className={"stage-slide " + sl.cls}
+          style={{ display: i === active ? undefined : "none" }}
+          suppressHydrationWarning
+        >
+          {sl.node}
+        </section>
+      ))}
+
+      {/* Grid view — all four countdowns at once (2×2, responsive). */}
+      <section
+        id="grid-view"
+        className="stage-slide grid-view"
+        style={{ display: active === GRID_VIEW ? undefined : "none" }}
+        suppressHydrationWarning
+      >
+        <div className="grid-wrap">
+          <GridCell
+            cls="gcell-tb"
+            kicker="27.06.2026 · Split"
+            title="Teambuilding"
+            meta="Viedeň → Split · katamarán"
+            prefix="gtb"
+            t={gTb}
+            labels={["dní", "hod", "min", "sek"]}
+            scene={<TbMiniScene />}
+          />
+          <GridCell
+            cls="gcell-nr"
+            kicker="05.09.2026 · 20:00"
+            title="Night Run"
+            meta="Telekom · 10 km · Bratislava"
+            prefix="gnr"
+            t={gNr}
+            labels={["dní", "hod", "min", "sek"]}
+          />
+          <GridCell
+            cls="gcell-gta"
+            kicker="19.11.2026"
+            title="GTA VI"
+            meta="Grand Theft Auto · PS5 / Xbox"
+            prefix="ggta"
+            t={gGta}
+            labels={["days", "hrs", "min", "sec"]}
+          />
+          <GridCell
+            cls="gcell-fb"
+            kicker="503 · Offline"
+            title="Fable 5"
+            meta="Offline since 12.06.2026"
+            prefix="gfb"
+            t={gFb}
+            labels={["dní", "hod", "min", "sek"]}
+            watermark={fableBack ? "YES" : "NO"}
+          />
+        </div>
+      </section>
+
+      {/* Bottom nav — shows which view is on screen, highlights the active one */}
+      <div className="slide-nav">
+        {navNames.map((nm, i) => (
+          <span
+            key={i}
+            id={"nav-" + i}
+            className={"nav-item" + (i === active ? " nav-on" : "")}
+            suppressHydrationWarning
+          >
+            {nm}
+          </span>
+        ))}
       </div>
 
       <script dangerouslySetInnerHTML={{ __html: tickerJs }} />

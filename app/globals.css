@@ -24,6 +24,79 @@ html, body {
   overflow: hidden;
 }
 
+/* ----- Carousel -----
+   Slides stack full-screen; only the active one is display:block (set by the
+   ES5 ticker, and server-side on first paint). Each entry fades/scales in via
+   slideIn, which replays whenever a slide flips from display:none → block. */
+.carousel {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  background: #05060a;
+  overflow: hidden;
+}
+.stage-slide {
+  position: fixed;
+  left: 0; top: 0; right: 0; bottom: 0;
+  overflow: hidden;
+  -webkit-animation: slideIn 800ms ease-out both;
+  animation: slideIn 800ms ease-out both;
+}
+@-webkit-keyframes slideIn {
+  from { opacity: 0; -webkit-transform: scale(1.035); }
+  to   { opacity: 1; -webkit-transform: scale(1); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: scale(1.035); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Bottom nav — labelled indicator of which slide is on screen. */
+.slide-nav {
+  position: fixed;
+  left: 0; right: 0; bottom: 22px;
+  text-align: center;
+  z-index: 10;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 14px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.nav-item {
+  display: inline-block;
+  margin: 0 16px;
+  padding-bottom: 7px;
+  color: rgba(243, 233, 210, 0.32);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  -webkit-transition: color 300ms ease, border-color 300ms ease;
+  transition: color 300ms ease, border-color 300ms ease;
+}
+.nav-item:hover {
+  color: rgba(243, 233, 210, 0.7);
+}
+.nav-on {
+  color: #f3e9d2;
+  border-bottom-color: #f3e9d2;
+}
+/* pinned (auto-rotation paused) — small dot before the active label */
+.nav-pin:before {
+  content: "\25CF";
+  font-size: 0.6em;
+  margin-right: 8px;
+  vertical-align: middle;
+  opacity: 0.85;
+}
+@media (max-width: 1440px) {
+  .slide-nav { bottom: 14px; font-size: 11px; letter-spacing: 2px; }
+  .nav-item { margin: 0 10px; padding-bottom: 5px; }
+}
+@media (min-width: 2560px) {
+  .slide-nav { bottom: 40px; font-size: 22px; letter-spacing: 7px; }
+  .nav-item { margin: 0 30px; padding-bottom: 11px; }
+}
+
 /* ----- Sky & sea gradient -----
    Default palette is the signature sunset (used for dusk phase).
    Other phases override below so the sky evolves with local Bratislava time. */
@@ -278,15 +351,15 @@ html, body {
 .cat {
   position: absolute;
   left: 42%;
-  top: 58%;
-  margin-left: -210px;
+  top: 43%;
+  margin-left: -245px;
   -webkit-animation: bob 5.5s ease-in-out infinite;
   animation: bob 5.5s ease-in-out infinite;
 }
 .cat-svg {
   display: block;
-  width: 420px;
-  height: 394px;
+  width: 490px;
+  height: 460px;
 }
 /* Warm lit cabin windows — inviting glow that shows against every sky phase. */
 .cat-windows rect { fill: #ffcf73; opacity: 0.88; }
@@ -469,8 +542,8 @@ html, body {
   .lbl { font-size: 14px; letter-spacing: 7px; margin-top: 24px; }
   .sun-glow { width: 420px; height: 420px; margin-left: -210px; margin-top: -210px; }
   .sun-disc { width: 78px; height: 78px; margin-left: -39px; margin-top: -39px; }
-  .cat-svg { width: 320px; height: 300px; }
-  .cat { margin-left: -160px; top: 62%; }
+  .cat-svg { width: 360px; height: 338px; }
+  .cat { margin-left: -180px; top: 41%; }
 }
 
 /* 4K TVs */
@@ -483,8 +556,8 @@ html, body {
   .lbl { font-size: 28px; letter-spacing: 14px; margin-top: 48px; }
   .sun-glow { width: 820px; height: 820px; margin-left: -410px; margin-top: -410px; }
   .sun-disc { width: 160px; height: 160px; margin-left: -80px; margin-top: -80px; }
-  .cat-svg { width: 620px; height: 580px; }
-  .cat { margin-left: -310px; top: 54%; }
+  .cat-svg { width: 720px; height: 675px; }
+  .cat { margin-left: -360px; top: 52%; }
 }
 
 /* =================================================================
@@ -744,4 +817,462 @@ html, body {
   .cloud-2 { width: 440px; height: 170px; }
   .cloud-3 { width: 640px; height: 240px; }
   .drop    { width: 3px; height: 36px; }
+}
+
+/* =================================================================
+   SLIDE 2 — Telekom Night Run (Bratislava)
+   Full-bleed blue-hour photo (public/nightrun.jpg) + athletic Oswald type.
+   No neon: clean white text, one restrained solid-magenta brand accent.
+   ================================================================= */
+.slide-nr .topbar {
+  font-family: "Oswald", "JetBrains Mono", sans-serif;
+  color: #dce6f4; opacity: 0.92; font-weight: 400;
+}
+.slide-nr .rule { border-top-color: rgba(214, 230, 252, 0.30); }
+.slide-nr .hero { padding-bottom: 37vh; } /* lift the countdown into the clear sky above the runners */
+
+.slide-nr .kicker {
+  font-family: "Oswald", sans-serif;
+  font-weight: 500;
+  font-size: 30px;
+  letter-spacing: 12px;
+  color: #eef4ff;
+  text-transform: uppercase;
+}
+.slide-nr .kicker .vol { color: #ff2e8a; font-style: normal; font-weight: 600; } /* solid brand magenta, no glow */
+
+.slide-nr .num {
+  font-family: "Oswald", sans-serif;
+  font-style: normal;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.85), 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+.slide-nr .dig { width: 0.62em; }
+.slide-nr .lbl {
+  font-family: "Oswald", "JetBrains Mono", sans-serif;
+  font-weight: 500;
+  color: #e6eefa;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9), 0 0 4px rgba(0, 0, 0, 0.7);
+}
+
+.nr-photo {
+  position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+  background-color: #0a1422; /* shows through only until the photo paints */
+  background-image: url("/nightrun.jpg");
+  background-size: cover;
+  background-position: center 64%;
+  background-repeat: no-repeat;
+}
+/* Legibility shade: darker at top (countdown) + base, clear in the middle. */
+.nr-shade {
+  position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+  background: -webkit-linear-gradient(top,
+    rgba(5, 11, 24, 0.78) 0%, rgba(5, 11, 24, 0.40) 26%, rgba(5, 11, 24, 0.08) 48%,
+    rgba(5, 10, 22, 0.40) 74%, rgba(3, 6, 16, 0.90) 100%);
+  background: linear-gradient(to bottom,
+    rgba(5, 11, 24, 0.78) 0%, rgba(5, 11, 24, 0.40) 26%, rgba(5, 11, 24, 0.08) 48%,
+    rgba(5, 10, 22, 0.40) 74%, rgba(3, 6, 16, 0.90) 100%);
+}
+/* Very subtle Telekom-magenta warmth at the base — brand, not neon. */
+.nr-tint {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 40%;
+  background: -webkit-linear-gradient(top, rgba(226, 0, 116, 0) 0%, rgba(226, 0, 116, 0.14) 100%);
+  background: linear-gradient(to bottom, rgba(226, 0, 116, 0) 0%, rgba(226, 0, 116, 0.14) 100%);
+  pointer-events: none;
+}
+.nr-foot {
+  margin-top: 28px;
+  font-family: "Oswald", "JetBrains Mono", sans-serif;
+  font-weight: 400;
+  font-size: 17px;
+  letter-spacing: 7px;
+  text-transform: uppercase;
+  color: #c4d3e8;
+}
+@media (max-width: 1440px) {
+  .slide-nr .hero { padding-bottom: 27vh; }
+  .slide-nr .kicker { font-size: 18px; letter-spacing: 8px; }
+  .nr-foot { font-size: 13px; letter-spacing: 5px; margin-top: 20px; }
+}
+@media (min-width: 2560px) {
+  .slide-nr .hero { padding-bottom: 34vh; }
+  .slide-nr .kicker { font-size: 46px; letter-spacing: 18px; }
+  .nr-foot { font-size: 28px; letter-spacing: 11px; margin-top: 44px; }
+}
+
+/* =================================================================
+   SLIDE 3 — GTA VI
+   Full-bleed official key art (public/gta6.jpg) + poster lower-third.
+   ================================================================= */
+.slide-gta .topbar {
+  font-family: "Oswald", "JetBrains Mono", sans-serif;
+  color: #f4d8ea; opacity: 0.92; font-weight: 400;
+}
+.slide-gta .rule { border-top-color: rgba(255, 150, 200, 0.28); }
+/* Title + countdown live in the lower third, clear of the characters' faces. */
+.slide-gta .hero {
+  -webkit-box-pack: end; -webkit-justify-content: flex-end; justify-content: flex-end;
+  padding-bottom: 8vh;
+}
+.slide-gta .num {
+  font-family: "Oswald", sans-serif;
+  font-style: normal; font-weight: 600;
+  color: #ffffff; letter-spacing: 0;
+  text-shadow: 0 4px 22px rgba(0, 0, 0, 0.9), 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+.slide-gta .num { font-size: 250px; } /* condensed + 3-digit days → a bit smaller than base */
+.slide-gta .dig { width: 0.56em; }    /* tighter cell for Oswald's narrow numerals */
+.slide-gta .lbl {
+  font-family: "Oswald", "JetBrains Mono", sans-serif;
+  font-weight: 400; color: #e7b9d4;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+.gta-photo {
+  position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+  background-color: #1a0a2e;
+  background-image: url("/gta6.jpg");
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+/* Poster scrim: light touch at the top, heavy at the base for the title block. */
+.gta-shade {
+  position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+  background: -webkit-linear-gradient(top,
+    rgba(20, 6, 30, 0.55) 0%, rgba(20, 6, 30, 0.10) 22%, rgba(20, 6, 30, 0.05) 46%,
+    rgba(15, 5, 26, 0.55) 70%, rgba(10, 3, 20, 0.92) 100%);
+  background: linear-gradient(to bottom,
+    rgba(20, 6, 30, 0.55) 0%, rgba(20, 6, 30, 0.10) 22%, rgba(20, 6, 30, 0.05) 46%,
+    rgba(15, 5, 26, 0.55) 70%, rgba(10, 3, 20, 0.92) 100%);
+}
+
+.gta-title { text-align: center; margin-bottom: 26px; }
+.gta-grand {
+  display: block;
+  font-family: "Oswald", sans-serif;
+  font-weight: 500;
+  font-size: 26px;
+  letter-spacing: 16px;
+  text-transform: uppercase;
+  color: #ffe6f2;
+  margin-bottom: 2px;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.8);
+}
+.gta-vi {
+  display: block;
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 92px;
+  line-height: 0.9;
+  letter-spacing: 4px;
+  color: #ff5fa0; /* GTA pink — solid, no neon glow */
+  text-shadow: 0 4px 26px rgba(0, 0, 0, 0.55);
+}
+.gta-foot {
+  margin-top: 26px;
+  font-family: "Oswald", "JetBrains Mono", sans-serif;
+  font-weight: 400;
+  font-size: 17px;
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  color: #f0c9dd;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+/* =================================================================
+   SLIDE 4 — Is Fable 5 back?
+   The screen IS the answer: a giant typographic YES/NO + downtime.
+   ================================================================= */
+.slide-fable .topbar { font-family: "JetBrains Mono", "Courier New", monospace; color: #93a6bb; opacity: 0.85; }
+.slide-fable .rule { border-top-color: rgba(120, 150, 180, 0.14); }
+.slide-fable .hero { padding-bottom: 6vh; }
+
+/* Background + state-tinted vignette + breathing glow behind the word. */
+.fb-bg { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background: #08090d; }
+.fb-bg-off {
+  background: -webkit-radial-gradient(50% 44%, ellipse, #200e10 0%, #0c0a0e 55%, #08090d 100%);
+  background: radial-gradient(ellipse at 50% 44%, #200e10 0%, #0c0a0e 55%, #08090d 100%);
+}
+.fb-bg-on {
+  background: -webkit-radial-gradient(50% 44%, ellipse, #0c2018 0%, #0a0d0e 55%, #08090d 100%);
+  background: radial-gradient(ellipse at 50% 44%, #0c2018 0%, #0a0d0e 55%, #08090d 100%);
+}
+.fb-glow {
+  position: absolute; left: 50%; top: 40%;
+  width: 1200px; height: 1200px; margin-left: -600px; margin-top: -600px;
+  -webkit-animation: fbBreathe 6s ease-in-out infinite; animation: fbBreathe 6s ease-in-out infinite;
+}
+.fb-glow-off {
+  background: -webkit-radial-gradient(center, circle, rgba(255,70,60,0.22) 0%, rgba(255,70,60,0) 60%);
+  background: radial-gradient(circle at center, rgba(255,70,60,0.22) 0%, rgba(255,70,60,0) 60%);
+}
+.fb-glow-on {
+  background: -webkit-radial-gradient(center, circle, rgba(50,220,120,0.22) 0%, rgba(50,220,120,0) 60%);
+  background: radial-gradient(circle at center, rgba(50,220,120,0.22) 0%, rgba(50,220,120,0) 60%);
+}
+@-webkit-keyframes fbBreathe { 0%,100% { opacity: 0.78; } 50% { opacity: 1; } }
+@keyframes fbBreathe { 0%,100% { opacity: 0.78; } 50% { opacity: 1; } }
+.fb-mesh {
+  position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+  opacity: 0.4;
+  background-image: -webkit-radial-gradient(rgba(120,150,190,0.08) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(120,150,190,0.08) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+/* The big answer */
+.fb-hero { -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center; }
+.fb-q {
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 21px; letter-spacing: 9px; text-transform: uppercase;
+  color: #8a9bb0; margin-bottom: 6px;
+}
+.fb-answer {
+  font-family: "Oswald", sans-serif;
+  font-weight: 700;
+  font-size: 300px; line-height: 0.9; letter-spacing: 2px;
+  /* em padding clears Oswald's glyph overhang from the question/sub at any size */
+  padding: 0.05em 0 0.16em;
+  color: #ff5147;
+  text-shadow: 0 0 70px rgba(255,70,60,0.32), 0 14px 54px rgba(0,0,0,0.55);
+}
+.is-on .fb-answer { color: #3ee084; text-shadow: 0 0 70px rgba(60,224,130,0.32), 0 14px 54px rgba(0,0,0,0.55); }
+.fb-sub {
+  margin-top: 0;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 18px; letter-spacing: 3px; text-transform: uppercase; color: #9aabbf;
+}
+
+/* Downtime block */
+.fb-down { width: 100%; text-align: center; margin-top: 44px; }
+.fb-eyebrow {
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 13px; letter-spacing: 7px; text-transform: uppercase; color: #9a6f74; margin-bottom: 10px;
+}
+.slide-fable .countdown { margin: 0; }
+.slide-fable .num {
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-style: normal; font-weight: 700;
+  font-size: 72px; letter-spacing: -1px; color: #e9eef6;
+  text-shadow: 0 6px 26px rgba(0,0,0,0.5);
+}
+.slide-fable .dig { width: 0.62em; }
+.slide-fable .lbl { font-family: "JetBrains Mono", "Courier New", monospace; color: #6f879e; font-size: 12px; letter-spacing: 5px; margin-top: 12px; }
+.slide-fable .cell { padding: 0 18px; }
+.fb-foot {
+  display: -webkit-box; display: -webkit-flex; display: flex;
+  -webkit-box-align: center; -webkit-align-items: center; align-items: center;
+  -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center;
+  margin-top: 26px;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 12px; letter-spacing: 2px; color: #7d8ea2; white-space: nowrap;
+}
+.fb-poll { display: inline-block; width: 180px; height: 3px; margin: 0 16px; border-radius: 2px; background: rgba(130,160,200,0.16); overflow: hidden; vertical-align: middle; }
+.fb-poll-fill {
+  display: block; width: 100%; height: 100%; border-radius: 2px;
+  background: -webkit-linear-gradient(left, #ff5247, #ff8a5b);
+  background: linear-gradient(to right, #ff5247, #ff8a5b);
+  -webkit-transform-origin: left center; transform-origin: left center;
+  -webkit-animation: fbPoll 60s linear infinite; animation: fbPoll 60s linear infinite;
+}
+@-webkit-keyframes fbPoll { from { -webkit-transform: scaleX(0); } to { -webkit-transform: scaleX(1); } }
+@keyframes fbPoll { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* Responsive */
+@media (max-width: 1440px) {
+  .fb-q { font-size: 15px; letter-spacing: 6px; }
+  .fb-answer { font-size: 196px; }
+  .fb-sub { font-size: 13px; letter-spacing: 2px; }
+  .fb-down { margin-top: 30px; }
+  .slide-fable .num { font-size: 50px; }
+  .slide-fable .lbl { font-size: 10px; letter-spacing: 3px; margin-top: 9px; }
+  .slide-fable .cell { padding: 0 12px; }
+  .fb-eyebrow { font-size: 11px; letter-spacing: 5px; }
+  .fb-foot { font-size: 10px; }
+  .fb-poll { width: 120px; }
+  .fb-glow { width: 820px; height: 820px; margin-left: -410px; margin-top: -410px; }
+}
+@media (min-width: 2560px) {
+  .fb-q { font-size: 32px; letter-spacing: 14px; }
+  .fb-answer { font-size: 460px; }
+  .fb-sub { font-size: 28px; letter-spacing: 5px; }
+  .fb-down { margin-top: 70px; }
+  .slide-fable .num { font-size: 120px; }
+  .slide-fable .lbl { font-size: 20px; letter-spacing: 8px; margin-top: 20px; }
+  .slide-fable .cell { padding: 0 32px; }
+  .fb-eyebrow { font-size: 22px; letter-spacing: 11px; }
+  .fb-foot { font-size: 20px; }
+  .fb-poll { width: 320px; }
+  .fb-glow { width: 1900px; height: 1900px; margin-left: -950px; margin-top: -950px; }
+}
+/* ----- GTA responsive nudges ----- */
+@media (max-width: 1440px) {
+  .slide-gta .hero { padding-bottom: 6vh; }
+  .slide-gta .num { font-size: 150px; }
+  .slide-gta .cell { padding: 0 16px; }
+  .slide-gta .lbl { font-size: 12px; letter-spacing: 4px; margin-top: 14px; }
+  .gta-vi { font-size: 58px; }
+  .gta-grand { font-size: 16px; letter-spacing: 9px; }
+  .gta-title { margin-bottom: 14px; }
+  .gta-foot { font-size: 12px; letter-spacing: 5px; margin-top: 14px; }
+}
+@media (min-width: 2560px) {
+  .slide-gta .num { font-size: 300px; }
+  .slide-gta .cell { padding: 0 44px; }
+  .gta-vi { font-size: 150px; }
+  .gta-grand { font-size: 40px; letter-spacing: 24px; }
+  .gta-foot { font-size: 28px; letter-spacing: 12px; }
+}
+
+/* =================================================================
+   GRID VIEW — all four countdowns at once (2×2, responsive)
+   ================================================================= */
+.grid-view { background: #05060b; }
+.grid-wrap {
+  position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+  display: -webkit-box; display: -webkit-flex; display: flex;
+  -webkit-flex-wrap: wrap; flex-wrap: wrap;
+  padding: 26px 26px 60px; /* bottom room clears the nav */
+}
+.gcell { width: 50%; height: 50%; padding: 9px; }
+.gcell-card {
+  position: relative; width: 100%; height: 100%;
+  border-radius: 16px; overflow: hidden;
+  background-color: #11141c;
+  background-size: cover; background-position: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+/* Signature teambuilding sunset sky — the catamaran scene sits on top. */
+.gcell-tb {
+  background-image: -webkit-linear-gradient(top, #0a2247 0%, #2c3a62 30%, #5a4a6e 48%, #b85f54 60%, #f0824a 68%, #ffcf73 74%, #2f6a92 80%, #0f3e68 92%, #062038 100%);
+  background-image: linear-gradient(to bottom, #0a2247 0%, #2c3a62 30%, #5a4a6e 48%, #b85f54 60%, #f0824a 68%, #ffcf73 74%, #2f6a92 80%, #0f3e68 92%, #062038 100%);
+}
+/* Mini catamaran-at-sunset scene inside the Teambuilding tile. */
+.gtb-scene { position: absolute; left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
+.gtb-sun {
+  position: absolute; right: 16%; top: 24%;
+  width: 50px; height: 50px;
+  border-radius: 50%;
+  background: -webkit-radial-gradient(45% 40%, circle, #fff0c4 0%, #ffcf73 45%, #f5a454 100%);
+  background: radial-gradient(circle at 45% 40%, #fff0c4 0%, #ffcf73 45%, #f5a454 100%);
+  -webkit-box-shadow: 0 0 46px 12px rgba(255, 196, 110, 0.5);
+  box-shadow: 0 0 46px 12px rgba(255, 196, 110, 0.5);
+}
+.gtb-islands { position: absolute; left: 0; right: 0; bottom: 31%; width: 100%; height: 7%; }
+.gtb-waves { position: absolute; left: 0; right: 0; bottom: 0; height: 34%; }
+.gtb-wave { position: absolute; left: 0; bottom: 0; width: 100%; height: 100%; display: block; }
+.gtb-wave-b { opacity: 0.92; }
+.gtb-cat {
+  position: absolute; left: 50%; bottom: 6%;
+  width: 132px; height: 124px; margin-left: -66px;
+  fill: #04111f;
+}
+/* Text stays centred (aligned with the other tiles); darken the middle for the
+   countdown's legibility but keep the very bottom light so the boat reads. */
+.gcell-tb .gcell-scrim {
+  background: -webkit-linear-gradient(top, rgba(4,10,24,0.5) 0%, rgba(4,10,24,0.44) 52%, rgba(4,10,24,0.12) 74%, rgba(4,10,24,0.30) 100%);
+  background: linear-gradient(to bottom, rgba(4,10,24,0.5) 0%, rgba(4,10,24,0.44) 52%, rgba(4,10,24,0.12) 74%, rgba(4,10,24,0.30) 100%);
+}
+.gcell-nr { background-image: url("/nightrun.jpg"); background-position: center 60%; }
+.gcell-gta { background-image: url("/gta6.jpg"); }
+.gcell-fb {
+  background-image: -webkit-radial-gradient(50% 36%, ellipse, #38151c 0%, #1c0d12 52%, #0d0b10 100%);
+  background-image: radial-gradient(ellipse at 50% 36%, #38151c 0%, #1c0d12 52%, #0d0b10 100%);
+}
+/* Big faint answer behind the Fable tile (paints above the scrim, below text). */
+.gcell-wm {
+  position: absolute; right: 4%; top: 50%;
+  -webkit-transform: translateY(-50%); transform: translateY(-50%);
+  font-family: "Oswald", sans-serif; font-weight: 700;
+  font-size: 240px; line-height: 0.8; letter-spacing: 2px;
+  color: rgba(255, 82, 72, 0.18);
+  pointer-events: none;
+}
+.gcell-scrim {
+  position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+  background: -webkit-linear-gradient(top, rgba(5,8,16,0.50) 0%, rgba(5,8,16,0.30) 42%, rgba(4,6,14,0.85) 100%);
+  background: linear-gradient(to bottom, rgba(5,8,16,0.50) 0%, rgba(5,8,16,0.30) 42%, rgba(4,6,14,0.85) 100%);
+}
+.gcell-inner {
+  position: relative; z-index: 1; height: 100%;
+  padding: 30px 34px;
+  display: -webkit-box; display: -webkit-flex; display: flex;
+  -webkit-box-orient: vertical; -webkit-box-direction: normal;
+  -webkit-flex-direction: column; flex-direction: column;
+  -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center;
+}
+.gcell-kicker {
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 13px; letter-spacing: 4px; text-transform: uppercase;
+  color: rgba(243, 233, 210, 0.7); margin-bottom: 6px;
+}
+.gcell-title {
+  font-family: "Oswald", sans-serif; font-weight: 600;
+  font-size: 32px; letter-spacing: 2px; line-height: 1; text-transform: uppercase;
+  color: #ffffff; margin-bottom: 22px; white-space: nowrap;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+}
+.gcell-cd {
+  display: -webkit-box; display: -webkit-flex; display: flex;
+  -webkit-box-align: end; -webkit-align-items: flex-end; align-items: flex-end;
+}
+.gunit { text-align: center; margin-right: 20px; }
+.gunit:last-child { margin-right: 0; }
+.grid-view .num {
+  font-family: "Oswald", sans-serif; font-style: normal; font-weight: 600;
+  font-size: 62px; line-height: 1; letter-spacing: 0; color: #ffffff;
+  text-shadow: 0 3px 14px rgba(0, 0, 0, 0.7);
+}
+.grid-view .dig { width: 0.6em; }
+.glbl {
+  display: block; margin-top: 6px;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 11px; letter-spacing: 4px; text-transform: uppercase;
+  color: rgba(220, 230, 245, 0.6);
+}
+.gcell-meta {
+  margin-top: 18px;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 12px; letter-spacing: 3px; text-transform: uppercase;
+  color: rgba(220, 230, 245, 0.7);
+}
+
+@media (max-width: 1440px) {
+  .grid-wrap { padding: 16px 16px 50px; }
+  .gcell { padding: 6px; }
+  .gcell-inner { padding: 18px 22px; }
+  .gcell-kicker { font-size: 11px; letter-spacing: 3px; }
+  .gcell-title { font-size: 23px; margin-bottom: 14px; }
+  .grid-view .num { font-size: 44px; }
+  .gunit { margin-right: 13px; }
+  .glbl { font-size: 9px; letter-spacing: 3px; }
+  .gcell-meta { font-size: 10px; margin-top: 12px; }
+  .gcell-wm { font-size: 150px; }
+  .gtb-cat { width: 96px; height: 90px; margin-left: -48px; }
+  .gtb-sun { width: 34px; height: 34px; -webkit-box-shadow: 0 0 30px 7px rgba(255,196,110,0.5); box-shadow: 0 0 30px 7px rgba(255,196,110,0.5); }
+}
+@media (min-width: 2560px) {
+  .grid-wrap { padding: 44px 44px 90px; }
+  .gcell { padding: 14px; }
+  .gcell-inner { padding: 48px 54px; }
+  .gcell-kicker { font-size: 20px; letter-spacing: 6px; }
+  .gcell-title { font-size: 52px; margin-bottom: 34px; }
+  .grid-view .num { font-size: 100px; }
+  .gunit { margin-right: 32px; }
+  .glbl { font-size: 18px; letter-spacing: 6px; }
+  .gcell-meta { font-size: 18px; margin-top: 28px; }
+  .gcell-wm { font-size: 360px; }
+  .gtb-cat { width: 220px; height: 207px; margin-left: -110px; }
+  .gtb-sun { width: 78px; height: 78px; -webkit-box-shadow: 0 0 68px 16px rgba(255,196,110,0.5); box-shadow: 0 0 68px 16px rgba(255,196,110,0.5); }
+}
+/* Very narrow fallback — stack to a single column so it never crowds. */
+@media (max-width: 760px) {
+  .gcell { width: 100%; height: 25%; }
+  .gcell-title { font-size: 20px; }
+  .grid-view .num { font-size: 38px; }
+  .gcell-wm { font-size: 120px; }
 }
