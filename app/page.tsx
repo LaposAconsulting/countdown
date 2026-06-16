@@ -9,11 +9,10 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-// ----- Carousel timing -----
+// ----- Carousel timing (only used in full-rotation mode) -----
 const TEAM_MS = 600000; // 10 minutes (Teambuilding)
 const ROTATE_MS = 180000; // 3 minutes (Night Run)
 const SHORT_MS = 60000; // 1 minute (GTA, Fable)
-const GRID_MS = 1800000; // 30 minutes for the grid (all-countdowns) view
 
 // ----- Countdown targets -----
 const TB_TARGET_MS = new Date("2026-06-27T00:00:00+02:00").getTime();   // Teambuilding Vol. II — Split
@@ -859,23 +858,14 @@ export default async function Page() {
     { cls: "slide-fable", name: "Fable 5", node: <FableScene nowMs={nowMs} back={fableBack} /> },
   ];
 
-  // Views = the 4 slides (3 min each) + a grid of all countdowns (5 min).
-  // Active view is picked deterministically by walking the duration schedule,
-  // so it survives the 30 s meta-refresh exactly like the per-slide rotation.
-  // Per-view durations: Teambuilding 10m, Night Run 3m, GTA 1m, Fable 1m, Grid 30m.
-  const DUR = [TEAM_MS, ROTATE_MS, SHORT_MS, SHORT_MS, GRID_MS];
-  const VIEWS = DUR.length; // 5
+  // Views = the 4 full-screen slides + a grid of all countdowns.
+  // DEFAULT is grid-only: with JS off (or before the ticker first runs) we render
+  // the grid view and nothing else. The discreet bottom-right toggle (#mode-toggle)
+  // flips into the rotating full-screen slides; the choice lives in location.hash
+  // so it survives the layout.tsx <meta refresh=30> reload.
+  const VIEWS = 5;
   const GRID_VIEW = 4;
-  const totalCycle = DUR.reduce((a, b) => a + b, 0);
-  let active = 0;
-  {
-    const ph = nowMs % totalCycle;
-    let acc = 0;
-    for (let i = 0; i < DUR.length; i++) {
-      if (ph < acc + DUR[i]) { active = i; break; }
-      acc += DUR[i];
-    }
-  }
+  const active = GRID_VIEW; // grid-only by default; the ticker may switch to full rotation
   const navNames = [slides[0].name, slides[1].name, slides[2].name, slides[3].name, "All"];
 
   // Countdown values for the grid tiles (same maths as the slides).
@@ -885,30 +875,35 @@ export default async function Page() {
   const gFb = computeUp(nowMs, FABLE_OFFLINE_MS);
 
   // ES5-safe ticker. Updates every digit cell each second (variable cell count
-  // so days can grow past 99), then paints the active slide + nav.
-  // Active slide = clock-driven (floor(now/R)%N) UNLESS the user has pinned one
-  // by clicking a nav label. The pin lives in location.hash (#s=2) so it persists
-  // across the layout.tsx <meta refresh=30> reload; clicking the active label
-  // again clears the pin and resumes auto-rotation.
+  // so days can grow past 99), then paints the active view + nav.
+  // DEFAULT view is the grid (full=false). Tapping #mode-toggle flips into the
+  // rotating full-screen slides; from there a nav label can pin one slide. The
+  // mode/pin live in location.hash ('' = grid, 'full' = rotate, 's=2' = pinned)
+  // so they survive the layout.tsx <meta refresh=30> reload.
   const tickerJs =
     "(function(){" +
-    "var B=" + TEAM_MS + ",R=" + ROTATE_MS + ",S=" + SHORT_MS + ",G=" + GRID_MS + ",N=" + VIEWS + ";" +
-    "var DUR=[B,R,S,S,G],TOT=0,di;for(di=0;di<DUR.length;di++){TOT+=DUR[di];}" +
+    "var B=" + TEAM_MS + ",R=" + ROTATE_MS + ",S=" + SHORT_MS + ",N=" + VIEWS + ";" +
+    "var DUR=[B,R,S,S],TOT=0,di;for(di=0;di<DUR.length;di++){TOT+=DUR[di];}" +
     "var CD=[['tb'," + TB_TARGET_MS + "],['nr'," + NR_TARGET_MS + "],['gta'," + GTA_TARGET_MS + "]," +
     "['gtb'," + TB_TARGET_MS + "],['gnr'," + NR_TARGET_MS + "],['ggta'," + GTA_TARGET_MS + "]];" +
     "var UP=[['fb'," + FABLE_OFFLINE_MS + "],['gfb'," + FABLE_OFFLINE_MS + "]];" +
-    "var manual=-1;var mm=String(window.location.hash||'').match(/s=(\\d+)/);if(mm){var mi=parseInt(mm[1],10);if(mi>=0&&mi<N)manual=mi;}" +
+    "var h=String(window.location.hash||'');" +
+    "var full=(h.indexOf('full')>=0)||(h.indexOf('s=')>=0);" +
+    "var manual=-1;var mm=h.match(/s=(\\d+)/);if(mm){var mi=parseInt(mm[1],10);if(mi>=0&&mi<N)manual=mi;}" +
     "function setVar(id,val){var cells=[],i=0,c;while((c=document.getElementById(id+'-'+i))){cells.push(c);i++;}if(!cells.length)return;" +
     "var s=String(val);while(s.length<cells.length)s='0'+s;if(s.length>cells.length)s=s.substring(s.length-cells.length);" +
     "for(var j=0;j<cells.length;j++){var ch=s.charAt(j);if(cells[j].firstChild)cells[j].firstChild.nodeValue=ch;else cells[j].innerHTML=ch;}}" +
     "function units(p,ms){if(ms<0)ms=0;setVar(p+'-d',Math.floor(ms/86400000));setVar(p+'-h',Math.floor((ms%86400000)/3600000));setVar(p+'-m',Math.floor((ms%3600000)/60000));setVar(p+'-s',Math.floor((ms%60000)/1000));}" +
-    "function autoView(now){var ph=now%TOT,acc=0,i;for(i=0;i<N;i++){if(ph<acc+DUR[i])return i;acc+=DUR[i];}return 0;}" +
+    "function autoView(now){var ph=now%TOT,acc=0,i;for(i=0;i<DUR.length;i++){if(ph<acc+DUR[i])return i;acc+=DUR[i];}return 0;}" +
+    "function curView(now){if(!full)return 4;return manual>=0?manual:autoView(now);}" +
     "function paint(idx){var i;for(i=0;i<4;i++){var el=document.getElementById('slide-'+i);if(el)el.style.display=(i===idx)?'block':'none';}" +
     "var g=document.getElementById('grid-view');if(g)g.style.display=(idx===4)?'block':'none';" +
+    "var nav=document.getElementById('slide-nav');if(nav)nav.style.display=full?'':'none';" +
     "for(i=0;i<N;i++){var nv=document.getElementById('nav-'+i);if(nv)nv.className='nav-item'+(i===idx?' nav-on':'')+(manual===i?' nav-pin':'');}}" +
     "function tick(){var now=(new Date()).getTime();var i;for(i=0;i<CD.length;i++){units(CD[i][0],CD[i][1]-now);}for(i=0;i<UP.length;i++){units(UP[i][0],now-UP[i][1]);}" +
-    "paint(manual>=0?manual:autoView(now));}" +
-    "for(var k=0;k<N;k++){(function(j){var nv=document.getElementById('nav-'+j);if(nv){nv.onclick=function(){manual=(manual===j?-1:j);try{window.location.hash=(manual>=0?'s='+manual:'');}catch(e){}tick();};}})(k);}" +
+    "paint(curView(now));}" +
+    "for(var k=0;k<N;k++){(function(j){var nv=document.getElementById('nav-'+j);if(nv){nv.onclick=function(){manual=(manual===j?-1:j);try{window.location.hash=(manual>=0?'s='+manual:'full');}catch(e){}tick();};}})(k);}" +
+    "var tg=document.getElementById('mode-toggle');if(tg){tg.onclick=function(){full=!full;manual=-1;try{window.location.hash=(full?'full':'');}catch(e){}tick();};}" +
     "tick();setInterval(tick,1000);" +
     "})();";
 
@@ -977,8 +972,8 @@ export default async function Page() {
         </div>
       </section>
 
-      {/* Bottom nav — shows which view is on screen, highlights the active one */}
-      <div className="slide-nav">
+      {/* Bottom nav — only shown in full-rotation mode (ticker toggles it). */}
+      <div className="slide-nav" id="slide-nav" style={{ display: "none" }}>
         {navNames.map((nm, i) => (
           <span
             key={i}
@@ -990,6 +985,10 @@ export default async function Page() {
           </span>
         ))}
       </div>
+
+      {/* Discreet view toggle — bottom-right corner, barely visible. Click/tap to
+          switch between the all-countdowns grid (default) and the rotating slides. */}
+      <div id="mode-toggle" className="mode-toggle" aria-hidden="true" />
 
       <script dangerouslySetInnerHTML={{ __html: tickerJs }} />
     </main>
