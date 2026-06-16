@@ -10,7 +10,8 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 // ----- Carousel timing -----
-const ROTATE_MS = 180000; // 3 minutes per slide
+const ROTATE_MS = 180000; // 3 minutes (Teambuilding, Night Run)
+const SHORT_MS = 60000; // 1 minute (GTA, Fable)
 const GRID_MS = 300000; // 5 minutes for the grid (all-countdowns) view
 
 // ----- Countdown targets -----
@@ -860,10 +861,11 @@ export default async function Page() {
   // Views = the 4 slides (3 min each) + a grid of all countdowns (5 min).
   // Active view is picked deterministically by walking the duration schedule,
   // so it survives the 30 s meta-refresh exactly like the per-slide rotation.
-  const DUR = [ROTATE_MS, ROTATE_MS, ROTATE_MS, ROTATE_MS, GRID_MS];
+  // Per-view durations: Teambuilding 3m, Night Run 3m, GTA 1m, Fable 1m, Grid 5m.
+  const DUR = [ROTATE_MS, ROTATE_MS, SHORT_MS, SHORT_MS, GRID_MS];
   const VIEWS = DUR.length; // 5
   const GRID_VIEW = 4;
-  const totalCycle = ROTATE_MS * 4 + GRID_MS;
+  const totalCycle = DUR.reduce((a, b) => a + b, 0);
   let active = 0;
   {
     const ph = nowMs % totalCycle;
@@ -889,8 +891,8 @@ export default async function Page() {
   // again clears the pin and resumes auto-rotation.
   const tickerJs =
     "(function(){" +
-    "var R=" + ROTATE_MS + ",G=" + GRID_MS + ",N=" + VIEWS + ";" +
-    "var DUR=[R,R,R,R,G],TOT=R*4+G;" +
+    "var R=" + ROTATE_MS + ",S=" + SHORT_MS + ",G=" + GRID_MS + ",N=" + VIEWS + ";" +
+    "var DUR=[R,R,S,S,G],TOT=0,di;for(di=0;di<DUR.length;di++){TOT+=DUR[di];}" +
     "var CD=[['tb'," + TB_TARGET_MS + "],['nr'," + NR_TARGET_MS + "],['gta'," + GTA_TARGET_MS + "]," +
     "['gtb'," + TB_TARGET_MS + "],['gnr'," + NR_TARGET_MS + "],['ggta'," + GTA_TARGET_MS + "]];" +
     "var UP=[['fb'," + FABLE_OFFLINE_MS + "],['gfb'," + FABLE_OFFLINE_MS + "]];" +
