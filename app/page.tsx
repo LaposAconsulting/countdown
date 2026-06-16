@@ -13,7 +13,7 @@ export const revalidate = 0;
 const TEAM_MS = 600000; // 10 minutes (Teambuilding)
 const ROTATE_MS = 180000; // 3 minutes (Night Run)
 const SHORT_MS = 60000; // 1 minute (GTA, Fable)
-const GRID_MS = 300000; // 5 minutes for the grid (all-countdowns) view
+const GRID_MS = 1800000; // 30 minutes for the grid (all-countdowns) view
 
 // ----- Countdown targets -----
 const TB_TARGET_MS = new Date("2026-06-27T00:00:00+02:00").getTime();   // Teambuilding Vol. II — Split
@@ -862,7 +862,7 @@ export default async function Page() {
   // Views = the 4 slides (3 min each) + a grid of all countdowns (5 min).
   // Active view is picked deterministically by walking the duration schedule,
   // so it survives the 30 s meta-refresh exactly like the per-slide rotation.
-  // Per-view durations: Teambuilding 10m, Night Run 3m, GTA 1m, Fable 1m, Grid 5m.
+  // Per-view durations: Teambuilding 10m, Night Run 3m, GTA 1m, Fable 1m, Grid 30m.
   const DUR = [TEAM_MS, ROTATE_MS, SHORT_MS, SHORT_MS, GRID_MS];
   const VIEWS = DUR.length; // 5
   const GRID_VIEW = 4;
