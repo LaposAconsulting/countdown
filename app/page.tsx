@@ -15,7 +15,7 @@ const ROTATE_MS = 180000; // 3 minutes (Night Run)
 const SHORT_MS = 60000; // 1 minute (GTA, Fable)
 
 // ----- Countdown targets -----
-const TB_TARGET_MS = new Date("2026-06-27T00:00:00+02:00").getTime();   // Teambuilding Vol. II — Split
+const TB_TARGET_MS = new Date("2026-06-27T19:00:00+02:00").getTime();   // Teambuilding Vol. II — Split (departs 19:00)
 const NR_TARGET_MS = new Date("2026-09-05T20:00:00+02:00").getTime();   // Telekom Night Run — Bratislava
 const GTA_TARGET_MS = new Date("2026-11-19T00:00:00+01:00").getTime();  // GTA VI release
 const FABLE_OFFLINE_MS = new Date("2026-06-12T00:00:00+02:00").getTime(); // Fable 5 went offline — count UP
@@ -477,11 +477,87 @@ function CatamaranSvg({ className }: { className: string }) {
   );
 }
 
-// Compact, static catamaran-at-sunset scene for the grid tile.
-function TbMiniScene() {
+// Compact LIVE catamaran scene for the grid tile — mirrors the full Teambuilding
+// slide (day/night sky, positioned sun/moon, weather) but sized for the grid cell.
+// Reuses the same deterministic STARS/RAIN/SNOW arrays so SSR and client agree.
+function TbMiniScene({
+  cond,
+  sun,
+  moon,
+  moonPhase,
+}: {
+  cond: Conditions;
+  sun: { left: number; top: number; visible: boolean };
+  moon: { left: number; top: number; visible: boolean };
+  moonPhase: { phase: number; illumination: number };
+}) {
+  const weather = cond.weather;
+  const cloudy = weather === "cloudy" || weather === "rain" || weather === "snow" || weather === "storm";
+  const showClouds = weather === "partly" || cloudy;
+
+  const moonShadowOffset =
+    moonPhase.phase < 0.5 ? moonPhase.phase * 200 : (1 - moonPhase.phase) * 200;
+  const moonShadowCx = moonPhase.phase < 0.5 ? -moonShadowOffset : moonShadowOffset;
+  const moonOpacity = 0.3 + moonPhase.illumination * 0.7;
+
   return (
     <div className="gtb-scene" aria-hidden="true">
-      <span className="gtb-sun" />
+      <div className={"gtb-stars stars-" + weather}>
+        {STARS.slice(0, 18).map((s, i) => (
+          <span
+            key={i}
+            className="gtb-star"
+            style={{
+              left: s.x + "%",
+              top: s.y + "%",
+              width: s.s + "px",
+              height: s.s + "px",
+              opacity: s.o,
+              WebkitAnimationDelay: s.d + "s",
+              animationDelay: s.d + "s",
+            }}
+          />
+        ))}
+      </div>
+
+      {sun.visible && (
+        <span
+          className={"gtb-sun gtb-sun-" + weather}
+          style={{ left: sun.left + "%", top: sun.top + "%" }}
+        />
+      )}
+
+      {moon.visible && (
+        <svg
+          className={"gtb-moon gtb-moon-" + weather}
+          viewBox="-55 -55 110 110"
+          style={{ left: moon.left + "%", top: moon.top + "%", opacity: moonOpacity }}
+        >
+          <defs>
+            <clipPath id="gtbMoonClip">
+              <circle cx="0" cy="0" r="50" />
+            </clipPath>
+          </defs>
+          <circle cx="0" cy="0" r="50" fill="#f3e9d2" />
+          <circle cx={moonShadowCx} cy="0" r="50" fill="#0a1a2a" clipPath="url(#gtbMoonClip)" />
+        </svg>
+      )}
+
+      {showClouds && (
+        <div className={"gtb-clouds clouds-" + weather}>
+          <Cloud className="gtb-cloud-1" />
+          <Cloud className="gtb-cloud-2" />
+          <Cloud className="gtb-cloud-3" />
+        </div>
+      )}
+
+      {weather === "fog" && (
+        <div className="gtb-fog">
+          <div className="gtb-fog-band gtb-fog-1" />
+          <div className="gtb-fog-band gtb-fog-2" />
+        </div>
+      )}
+
       <svg className="gtb-islands" viewBox="0 0 1200 60" preserveAspectRatio="none">
         <path
           d="M0 55 L90 42 L160 50 L230 30 L340 48 L430 38 L540 52 L640 30 L760 48 L860 42 L970 50 L1060 36 L1200 50 L1200 60 L0 60 Z"
@@ -489,6 +565,7 @@ function TbMiniScene() {
           opacity="0.85"
         />
       </svg>
+
       <div className="gtb-waves">
         <svg className="gtb-wave gtb-wave-b" viewBox="0 0 2400 200" preserveAspectRatio="none">
           <path d="M0 80 C180 40, 360 130, 600 80 C840 30, 1020 130, 1200 80 C1380 30, 1560 130, 1800 80 C2040 30, 2220 130, 2400 80 L2400 200 L0 200 Z" fill="#0e3a5c" />
@@ -497,7 +574,50 @@ function TbMiniScene() {
           <path d="M0 90 C160 40, 320 140, 600 90 C880 40, 1040 140, 1200 90 C1360 40, 1520 140, 1800 90 C2080 40, 2240 140, 2400 90 L2400 200 L0 200 Z" fill="#062138" />
         </svg>
       </div>
+
       <CatamaranSvg className="gtb-cat" />
+
+      {(weather === "rain" || weather === "storm") && (
+        <div className="gtb-rain">
+          {RAIN.slice(0, 12).map((r, i) => (
+            <span
+              key={i}
+              className="gtb-drop"
+              style={{
+                left: r.x + "%",
+                opacity: r.o,
+                WebkitAnimationDelay: r.d + "s",
+                animationDelay: r.d + "s",
+                WebkitAnimationDuration: r.du + "s",
+                animationDuration: r.du + "s",
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {weather === "snow" && (
+        <div className="gtb-snow">
+          {SNOW.slice(0, 10).map((s, i) => (
+            <span
+              key={i}
+              className="gtb-flake"
+              style={{
+                left: s.x + "%",
+                width: s.s + "px",
+                height: s.s + "px",
+                opacity: s.o,
+                WebkitAnimationDelay: s.d + "s",
+                animationDelay: s.d + "s",
+                WebkitAnimationDuration: s.du + "s",
+                animationDuration: s.du + "s",
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {weather === "storm" && <div className="gtb-lightning" />}
     </div>
   );
 }
@@ -932,14 +1052,14 @@ export default async function Page() {
       >
         <div className="grid-wrap">
           <GridCell
-            cls="gcell-tb"
+            cls={"gcell-tb weather-" + cond.weather + " sky-" + skyPhase}
             kicker="27.06.2026 · Split"
             title="Teambuilding"
             meta="Viedeň → Split · katamarán"
             prefix="gtb"
             t={gTb}
             labels={["dní", "hod", "min", "sek"]}
-            scene={<TbMiniScene />}
+            scene={<TbMiniScene cond={cond} sun={sun} moon={moon} moonPhase={moonPhase} />}
           />
           <GridCell
             cls="gcell-nr"

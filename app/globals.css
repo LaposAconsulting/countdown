@@ -1165,36 +1165,153 @@ html, body {
   background-size: cover; background-position: center;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
-/* Signature teambuilding sunset sky — the catamaran scene sits on top. */
+/* Signature teambuilding sky — LIVE: the sky-<phase> class on the .gcell-tb card
+   swaps the gradient with local Bratislava time, exactly like the full slide.
+   Default below is the sunset (dusk) palette. */
 .gcell-tb {
   background-image: -webkit-linear-gradient(top, #0a2247 0%, #2c3a62 30%, #5a4a6e 48%, #b85f54 60%, #f0824a 68%, #ffcf73 74%, #2f6a92 80%, #0f3e68 92%, #062038 100%);
   background-image: linear-gradient(to bottom, #0a2247 0%, #2c3a62 30%, #5a4a6e 48%, #b85f54 60%, #f0824a 68%, #ffcf73 74%, #2f6a92 80%, #0f3e68 92%, #062038 100%);
 }
-/* Mini catamaran-at-sunset scene inside the Teambuilding tile. */
+.gcell-tb.sky-night {
+  background-image: -webkit-linear-gradient(top, #020611 0%, #05102a 42%, #0a1a3a 72%, #071635 86%, #030a18 100%);
+  background-image: linear-gradient(to bottom, #020611 0%, #05102a 42%, #0a1a3a 72%, #071635 86%, #030a18 100%);
+}
+.gcell-tb.sky-dawn {
+  background-image: -webkit-linear-gradient(top, #0a1a36 0%, #1c2c4e 36%, #3b385a 56%, #7c5a6c 66%, #d49078 74%, #efb484 80%, #3b5a76 88%, #0e2a46 100%);
+  background-image: linear-gradient(to bottom, #0a1a36 0%, #1c2c4e 36%, #3b385a 56%, #7c5a6c 66%, #d49078 74%, #efb484 80%, #3b5a76 88%, #0e2a46 100%);
+}
+.gcell-tb.sky-day {
+  background-image: -webkit-linear-gradient(top, #3f7fbc 0%, #63a3cf 38%, #9bc8e2 62%, #c5dfec 74%, #86b4d0 84%, #3d6e94 93%, #204863 100%);
+  background-image: linear-gradient(to bottom, #3f7fbc 0%, #63a3cf 38%, #9bc8e2 62%, #c5dfec 74%, #86b4d0 84%, #3d6e94 93%, #204863 100%);
+}
+
+/* ----- Mini live scene inside the Teambuilding tile ----- */
 .gtb-scene { position: absolute; left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
+
+/* Stars — dimmed/hidden by sky phase and weather, mirroring the full slide. */
+.gtb-stars { position: absolute; left: 0; right: 0; top: 0; bottom: 0; pointer-events: none; }
+.gtb-star {
+  position: absolute; background: #f3e9d2; border-radius: 50%;
+  -webkit-animation: twinkle 3.4s ease-in-out infinite; animation: twinkle 3.4s ease-in-out infinite;
+}
+.sky-day .gtb-stars { opacity: 0; }
+.sky-dawn .gtb-stars, .sky-dusk .gtb-stars { opacity: 0.5; }
+.gtb-stars.stars-cloudy, .gtb-stars.stars-rain, .gtb-stars.stars-snow,
+.gtb-stars.stars-storm, .gtb-stars.stars-fog { opacity: 0.3; }
+
+/* Sun — positioned along the day arc via inline left/top% (centred by margin). */
 .gtb-sun {
-  position: absolute; right: 16%; top: 24%;
-  width: 50px; height: 50px;
-  border-radius: 50%;
+  position: absolute; margin-left: -25px; margin-top: -25px;
+  width: 50px; height: 50px; border-radius: 50%;
   background: -webkit-radial-gradient(45% 40%, circle, #fff0c4 0%, #ffcf73 45%, #f5a454 100%);
   background: radial-gradient(circle at 45% 40%, #fff0c4 0%, #ffcf73 45%, #f5a454 100%);
   -webkit-box-shadow: 0 0 46px 12px rgba(255, 196, 110, 0.5);
   box-shadow: 0 0 46px 12px rgba(255, 196, 110, 0.5);
 }
+.gtb-sun-partly { opacity: 0.92; }
+.gtb-sun-cloudy { opacity: 0.6; }
+.gtb-sun-fog    { opacity: 0.55; }
+.gtb-sun-rain   { opacity: 0.4; }
+.gtb-sun-snow   { opacity: 0.55; }
+.gtb-sun-storm  { opacity: 0.25; }
+
+/* Moon — same two-circle phase as the full slide, positioned along the night arc. */
+.gtb-moon {
+  position: absolute; display: block;
+  width: 46px; height: 46px; margin-left: -23px; margin-top: -23px;
+  -webkit-filter: drop-shadow(0 0 10px rgba(243,233,210,0.35));
+  filter: drop-shadow(0 0 10px rgba(243,233,210,0.35));
+}
+.gtb-moon-cloudy { opacity: 0.5 !important; }
+.gtb-moon-fog    { opacity: 0.45 !important; }
+.gtb-moon-rain   { opacity: 0.32 !important; }
+.gtb-moon-snow   { opacity: 0.45 !important; }
+.gtb-moon-storm  { opacity: 0.2 !important; }
+
+/* Clouds — reuse the .cloud fill rules via the clouds-<weather> container class.
+   Tile-contained drift (px, not vw) so a cloud is always in frame. */
+.gtb-clouds { position: absolute; left: 0; right: 0; top: 0; height: 64%; pointer-events: none; overflow: hidden; }
+.gtb-cloud-1 {
+  top: 14%; left: -22%; width: 130px; height: 52px; opacity: 0.85;
+  -webkit-animation: gtb-cloud-drift 150s linear infinite; animation: gtb-cloud-drift 150s linear infinite;
+  -webkit-animation-delay: -40s; animation-delay: -40s;
+}
+.gtb-cloud-2 {
+  top: 32%; left: -26%; width: 100px; height: 40px; opacity: 0.7;
+  -webkit-animation: gtb-cloud-drift 200s linear infinite; animation: gtb-cloud-drift 200s linear infinite;
+  -webkit-animation-delay: -120s; animation-delay: -120s;
+}
+.gtb-cloud-3 {
+  top: 4%; left: -30%; width: 150px; height: 58px; opacity: 0.9;
+  -webkit-animation: gtb-cloud-drift 125s linear infinite; animation: gtb-cloud-drift 125s linear infinite;
+  -webkit-animation-delay: -20s; animation-delay: -20s;
+}
+@-webkit-keyframes gtb-cloud-drift { from { -webkit-transform: translateX(0); } to { -webkit-transform: translateX(1050px); } }
+@keyframes gtb-cloud-drift { from { transform: translateX(0); } to { transform: translateX(1050px); } }
+
+/* Fog — two soft drifting bands over the water line. */
+.gtb-fog { position: absolute; left: 0; right: 0; top: 44%; height: 26%; pointer-events: none; overflow: hidden; }
+.gtb-fog-band {
+  position: absolute; left: -30%; right: -30%; height: 50%;
+  background: -webkit-linear-gradient(left, rgba(230,230,230,0) 0%, rgba(230,230,230,0.5) 50%, rgba(230,230,230,0) 100%);
+  background: linear-gradient(to right, rgba(230,230,230,0) 0%, rgba(230,230,230,0.5) 50%, rgba(230,230,230,0) 100%);
+  -webkit-animation: fog-drift 90s linear infinite; animation: fog-drift 90s linear infinite;
+}
+.gtb-fog-1 { top: 0%; opacity: 0.8; }
+.gtb-fog-2 { top: 40%; opacity: 0.55; -webkit-animation-duration: 130s; animation-duration: 130s; }
+
+/* Islands & waves — colours track the sky phase, like the full slide. */
 .gtb-islands { position: absolute; left: 0; right: 0; bottom: 31%; width: 100%; height: 7%; }
+.sky-day   .gtb-islands path { fill: #1f3a58; }
+.sky-dawn  .gtb-islands path { fill: #271e3a; }
+.sky-night .gtb-islands path { fill: #050d1c; }
 .gtb-waves { position: absolute; left: 0; right: 0; bottom: 0; height: 34%; }
 .gtb-wave { position: absolute; left: 0; bottom: 0; width: 100%; height: 100%; display: block; }
 .gtb-wave-b { opacity: 0.92; }
+.sky-day   .gtb-wave-b path { fill: #4d8cbf; }
+.sky-day   .gtb-wave-a path { fill: #2b5c8a; }
+.sky-dawn  .gtb-wave-b path { fill: #3c456a; }
+.sky-dawn  .gtb-wave-a path { fill: #141c38; }
+.sky-night .gtb-wave-b path { fill: #05162f; }
+.sky-night .gtb-wave-a path { fill: #020a1c; }
+
+/* Rain & snow — tile-contained fall (px translate, clipped above the water). */
+.gtb-rain { position: absolute; left: 0; right: 0; top: 0; bottom: 34%; pointer-events: none; overflow: hidden; }
+.gtb-drop {
+  position: absolute; top: -30px; width: 2px; height: 16px;
+  background: -webkit-linear-gradient(top, rgba(205,220,240,0) 0%, rgba(205,220,240,0.85) 100%);
+  background: linear-gradient(to bottom, rgba(205,220,240,0) 0%, rgba(205,220,240,0.85) 100%);
+  -webkit-animation: gtb-rain-fall 0.8s linear infinite; animation: gtb-rain-fall 0.8s linear infinite;
+}
+@-webkit-keyframes gtb-rain-fall { from { -webkit-transform: translateY(0); } to { -webkit-transform: translateY(360px); } }
+@keyframes gtb-rain-fall { from { transform: translateY(0); } to { transform: translateY(360px); } }
+.gtb-snow { position: absolute; left: 0; right: 0; top: 0; bottom: 34%; pointer-events: none; overflow: hidden; }
+.gtb-flake {
+  position: absolute; top: -16px; background: #f3e9d2; border-radius: 50%;
+  -webkit-animation: gtb-snow-fall 6s linear infinite; animation: gtb-snow-fall 6s linear infinite;
+}
+@-webkit-keyframes gtb-snow-fall { from { -webkit-transform: translateY(0); } to { -webkit-transform: translateY(360px); } }
+@keyframes gtb-snow-fall { from { transform: translateY(0); } to { transform: translateY(360px); } }
+
+/* Storm flash — reuses the full slide's flash keyframe. */
+.gtb-lightning {
+  position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+  background: #f3e9d2; opacity: 0; pointer-events: none;
+  -webkit-animation: flash 8s ease-in-out infinite; animation: flash 8s ease-in-out infinite;
+}
+
 .gtb-cat {
   position: absolute; left: 50%; bottom: 6%;
   width: 132px; height: 124px; margin-left: -66px;
   fill: #04111f;
 }
-/* Text stays centred (aligned with the other tiles); darken the middle for the
-   countdown's legibility but keep the very bottom light so the boat reads. */
+/* Keep the tile as bright as the full slide: only a soft centred band behind the
+   countdown (which sits vertically centred), near-clear at top so the day sky/sun
+   read, and a light wash at the very bottom so the boat stays grounded. Text
+   legibility comes from the per-glyph text-shadows below, not a full dark wash. */
 .gcell-tb .gcell-scrim {
-  background: -webkit-linear-gradient(top, rgba(4,10,24,0.5) 0%, rgba(4,10,24,0.44) 52%, rgba(4,10,24,0.12) 74%, rgba(4,10,24,0.30) 100%);
-  background: linear-gradient(to bottom, rgba(4,10,24,0.5) 0%, rgba(4,10,24,0.44) 52%, rgba(4,10,24,0.12) 74%, rgba(4,10,24,0.30) 100%);
+  background: -webkit-linear-gradient(top, rgba(4,10,24,0.10) 0%, rgba(4,10,24,0.06) 26%, rgba(4,10,24,0.32) 50%, rgba(4,10,24,0.10) 74%, rgba(4,10,24,0.22) 100%);
+  background: linear-gradient(to bottom, rgba(4,10,24,0.10) 0%, rgba(4,10,24,0.06) 26%, rgba(4,10,24,0.32) 50%, rgba(4,10,24,0.10) 74%, rgba(4,10,24,0.22) 100%);
 }
 .gcell-nr { background-image: url("/nightrun.jpg"); background-position: center 60%; }
 .gcell-gta { background-image: url("/gta6.jpg"); }
@@ -1272,7 +1389,8 @@ html, body {
   .gcell-meta { font-size: 10px; margin-top: 12px; }
   .gcell-wm { font-size: 150px; }
   .gtb-cat { width: 96px; height: 90px; margin-left: -48px; }
-  .gtb-sun { width: 34px; height: 34px; -webkit-box-shadow: 0 0 30px 7px rgba(255,196,110,0.5); box-shadow: 0 0 30px 7px rgba(255,196,110,0.5); }
+  .gtb-sun { width: 34px; height: 34px; margin-left: -17px; margin-top: -17px; -webkit-box-shadow: 0 0 30px 7px rgba(255,196,110,0.5); box-shadow: 0 0 30px 7px rgba(255,196,110,0.5); }
+  .gtb-moon { width: 32px; height: 32px; margin-left: -16px; margin-top: -16px; }
 }
 @media (min-width: 2560px) {
   .grid-wrap { padding: 44px 44px 90px; }
@@ -1286,7 +1404,8 @@ html, body {
   .gcell-meta { font-size: 18px; margin-top: 28px; }
   .gcell-wm { font-size: 360px; }
   .gtb-cat { width: 220px; height: 207px; margin-left: -110px; }
-  .gtb-sun { width: 78px; height: 78px; -webkit-box-shadow: 0 0 68px 16px rgba(255,196,110,0.5); box-shadow: 0 0 68px 16px rgba(255,196,110,0.5); }
+  .gtb-sun { width: 78px; height: 78px; margin-left: -39px; margin-top: -39px; -webkit-box-shadow: 0 0 68px 16px rgba(255,196,110,0.5); box-shadow: 0 0 68px 16px rgba(255,196,110,0.5); }
+  .gtb-moon { width: 72px; height: 72px; margin-left: -36px; margin-top: -36px; }
 }
 /* Very narrow fallback — stack to a single column so it never crowds. */
 @media (max-width: 760px) {
