@@ -58,7 +58,7 @@ html, body {
   text-align: center;
   z-index: 10;
   font-family: "JetBrains Mono", "Courier New", monospace;
-  font-size: 14px;
+  font-size: 18px;
   letter-spacing: 4px;
   text-transform: uppercase;
   white-space: nowrap;
@@ -108,7 +108,7 @@ html, body {
 }
 .mode-toggle:hover { opacity: 0.55; }
 @media (max-width: 1440px) {
-  .slide-nav { bottom: 14px; font-size: 11px; letter-spacing: 2px; }
+  .slide-nav { bottom: 14px; font-size: 14px; letter-spacing: 2px; }
   .nav-item { margin: 0 10px; padding-bottom: 5px; }
 }
 @media (min-width: 2560px) {
@@ -429,7 +429,7 @@ html, body {
   -webkit-align-items: center;
   align-items: center;
   font-family: "JetBrains Mono", "Courier New", monospace;
-  font-size: 15px;
+  font-size: 19px;
   letter-spacing: 3px;
   text-transform: uppercase;
   color: #f3e9d2;
@@ -465,7 +465,7 @@ html, body {
 
 .kicker {
   font-family: "JetBrains Mono", "Courier New", monospace;
-  font-size: 20px;
+  font-size: 25px;
   letter-spacing: 9px;
   text-transform: uppercase;
   color: #d7e2f0;
@@ -497,13 +497,13 @@ html, body {
   -webkit-box-align: center;
   -webkit-align-items: center;
   align-items: center;
-  padding: 0 44px;
+  padding: 0 36px;
 }
 .num {
   font-family: "Fraunces", "Playfair Display", Georgia, serif;
   font-weight: 400;
   font-style: italic;
-  font-size: 300px;
+  font-size: 320px;
   line-height: 0.82;
   letter-spacing: -6px;
   color: #f3e9d2;
@@ -530,7 +530,7 @@ html, body {
 .lbl {
   margin-top: 34px;
   font-family: "JetBrains Mono", "Courier New", monospace;
-  font-size: 18px;
+  font-size: 22px;
   letter-spacing: 10px;
   text-transform: uppercase;
   color: #9cb8d4;
@@ -554,11 +554,11 @@ html, body {
 @media (max-width: 1440px) {
   .num { font-size: 220px; letter-spacing: -4px; }
   .cell { padding: 0 32px; }
-  .topbar { font-size: 12px; letter-spacing: 2px; padding: 20px 32px 0 32px; }
+  .topbar { font-size: 15px; letter-spacing: 2px; padding: 20px 32px 0 32px; }
   .tb-route { display: none; } /* too tight on 720p — keep just the weather columns */
   .rule { margin: 12px 36px 0 36px; }
-  .kicker { font-size: 15px; letter-spacing: 7px; margin-bottom: 36px; }
-  .lbl { font-size: 14px; letter-spacing: 7px; margin-top: 24px; }
+  .kicker { font-size: 19px; letter-spacing: 7px; margin-bottom: 36px; }
+  .lbl { font-size: 18px; letter-spacing: 7px; margin-top: 24px; }
   .sun-glow { width: 420px; height: 420px; margin-left: -210px; margin-top: -210px; }
   .sun-disc { width: 78px; height: 78px; margin-left: -39px; margin-top: -39px; }
   .cat-svg { width: 360px; height: 338px; }
@@ -853,7 +853,7 @@ html, body {
 .slide-nr .kicker {
   font-family: "Oswald", sans-serif;
   font-weight: 500;
-  font-size: 30px;
+  font-size: 38px;
   letter-spacing: 12px;
   color: #eef4ff;
   text-transform: uppercase;
@@ -905,15 +905,15 @@ html, body {
   margin-top: 28px;
   font-family: "Oswald", "JetBrains Mono", sans-serif;
   font-weight: 400;
-  font-size: 17px;
+  font-size: 21px;
   letter-spacing: 7px;
   text-transform: uppercase;
   color: #c4d3e8;
 }
 @media (max-width: 1440px) {
   .slide-nr .hero { padding-bottom: 27vh; }
-  .slide-nr .kicker { font-size: 18px; letter-spacing: 8px; }
-  .nr-foot { font-size: 13px; letter-spacing: 5px; margin-top: 20px; }
+  .slide-nr .kicker { font-size: 23px; letter-spacing: 8px; }
+  .nr-foot { font-size: 16px; letter-spacing: 5px; margin-top: 20px; }
 }
 @media (min-width: 2560px) {
   .slide-nr .hero { padding-bottom: 34vh; }
@@ -941,7 +941,7 @@ html, body {
   color: #ffffff; letter-spacing: 0;
   text-shadow: 0 4px 22px rgba(0, 0, 0, 0.9), 0 1px 2px rgba(0, 0, 0, 0.7);
 }
-.slide-gta .num { font-size: 250px; } /* condensed + 3-digit days → a bit smaller than base */
+.slide-gta .num { font-size: 280px; } /* condensed + 3-digit days → a bit smaller than base */
 .slide-gta .dig { width: 0.56em; }    /* tighter cell for Oswald's narrow numerals */
 .slide-gta .lbl {
   font-family: "Oswald", "JetBrains Mono", sans-serif;
@@ -973,7 +973,7 @@ html, body {
   display: block;
   font-family: "Oswald", sans-serif;
   font-weight: 500;
-  font-size: 26px;
+  font-size: 33px;
   letter-spacing: 16px;
   text-transform: uppercase;
   color: #ffe6f2;
@@ -985,7 +985,7 @@ html, body {
   font-family: "Fraunces", Georgia, serif;
   font-style: italic;
   font-weight: 600;
-  font-size: 92px;
+  font-size: 115px;
   line-height: 0.9;
   letter-spacing: 4px;
   color: #ff5fa0; /* GTA pink — solid, no neon glow */
@@ -995,7 +995,7 @@ html, body {
   margin-top: 26px;
   font-family: "Oswald", "JetBrains Mono", sans-serif;
   font-weight: 400;
-  font-size: 17px;
+  font-size: 21px;
   letter-spacing: 8px;
   text-transform: uppercase;
   color: #f0c9dd;
@@ -1133,11 +1133,11 @@ html, body {
   .slide-gta .hero { padding-bottom: 6vh; }
   .slide-gta .num { font-size: 150px; }
   .slide-gta .cell { padding: 0 16px; }
-  .slide-gta .lbl { font-size: 12px; letter-spacing: 4px; margin-top: 14px; }
-  .gta-vi { font-size: 58px; }
-  .gta-grand { font-size: 16px; letter-spacing: 9px; }
+  .slide-gta .lbl { font-size: 15px; letter-spacing: 4px; margin-top: 14px; }
+  .gta-vi { font-size: 72px; }
+  .gta-grand { font-size: 20px; letter-spacing: 9px; }
   .gta-title { margin-bottom: 14px; }
-  .gta-foot { font-size: 12px; letter-spacing: 5px; margin-top: 14px; }
+  .gta-foot { font-size: 15px; letter-spacing: 5px; margin-top: 14px; }
 }
 @media (min-width: 2560px) {
   .slide-gta .num { font-size: 300px; }
@@ -1345,12 +1345,12 @@ html, body {
 }
 .gcell-kicker {
   font-family: "JetBrains Mono", "Courier New", monospace;
-  font-size: 13px; letter-spacing: 4px; text-transform: uppercase;
+  font-size: 16px; letter-spacing: 4px; text-transform: uppercase;
   color: rgba(243, 233, 210, 0.7); margin-bottom: 6px;
 }
 .gcell-title {
   font-family: "Oswald", sans-serif; font-weight: 600;
-  font-size: 32px; letter-spacing: 2px; line-height: 1; text-transform: uppercase;
+  font-size: 40px; letter-spacing: 2px; line-height: 1; text-transform: uppercase;
   color: #ffffff; margin-bottom: 22px; white-space: nowrap;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
 }
@@ -1358,24 +1358,24 @@ html, body {
   display: -webkit-box; display: -webkit-flex; display: flex;
   -webkit-box-align: end; -webkit-align-items: flex-end; align-items: flex-end;
 }
-.gunit { text-align: center; margin-right: 20px; }
+.gunit { text-align: center; margin-right: 24px; }
 .gunit:last-child { margin-right: 0; }
 .grid-view .num {
   font-family: "Oswald", sans-serif; font-style: normal; font-weight: 600;
-  font-size: 62px; line-height: 1; letter-spacing: 0; color: #ffffff;
+  font-size: 78px; line-height: 1; letter-spacing: 0; color: #ffffff;
   text-shadow: 0 3px 14px rgba(0, 0, 0, 0.7);
 }
 .grid-view .dig { width: 0.6em; }
 .glbl {
   display: block; margin-top: 6px;
   font-family: "JetBrains Mono", "Courier New", monospace;
-  font-size: 11px; letter-spacing: 4px; text-transform: uppercase;
+  font-size: 14px; letter-spacing: 4px; text-transform: uppercase;
   color: rgba(220, 230, 245, 0.6);
 }
 .gcell-meta {
   margin-top: 18px;
   font-family: "JetBrains Mono", "Courier New", monospace;
-  font-size: 12px; letter-spacing: 3px; text-transform: uppercase;
+  font-size: 15px; letter-spacing: 3px; text-transform: uppercase;
   color: rgba(220, 230, 245, 0.7);
 }
 
@@ -1383,12 +1383,12 @@ html, body {
   .grid-wrap { padding: 16px 16px 50px; }
   .gcell { padding: 6px; }
   .gcell-inner { padding: 18px 22px; }
-  .gcell-kicker { font-size: 11px; letter-spacing: 3px; }
-  .gcell-title { font-size: 23px; margin-bottom: 14px; }
-  .grid-view .num { font-size: 44px; }
-  .gunit { margin-right: 13px; }
-  .glbl { font-size: 9px; letter-spacing: 3px; }
-  .gcell-meta { font-size: 10px; margin-top: 12px; }
+  .gcell-kicker { font-size: 14px; letter-spacing: 3px; }
+  .gcell-title { font-size: 29px; margin-bottom: 14px; }
+  .grid-view .num { font-size: 55px; }
+  .gunit { margin-right: 16px; }
+  .glbl { font-size: 11px; letter-spacing: 3px; }
+  .gcell-meta { font-size: 13px; margin-top: 12px; }
   .gcell-wm { font-size: 150px; }
   .gtb-cat { width: 96px; height: 90px; margin-left: -48px; }
   .gtb-sun { width: 34px; height: 34px; margin-left: -17px; margin-top: -17px; -webkit-box-shadow: 0 0 30px 7px rgba(255,196,110,0.5); box-shadow: 0 0 30px 7px rgba(255,196,110,0.5); }
