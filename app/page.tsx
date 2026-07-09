@@ -1,18 +1,21 @@
 // Server-rendered countdown CAROUSEL for a 2014 Samsung TV browser.
 // Zero modern JS / CSS features on the wire.
-// Four slides rotate every ROTATE_MS (3 min). The active slide is picked
-// deterministically from the clock (floor(now/ROTATE_MS) % N) so the rotation
-// survives the layout.tsx <meta refresh=30> reload — no client state to lose.
-// Initial values are SSR'd so the page works with JS disabled.
+// Slides rotate deterministically from the clock (elapsed % total duration) so
+// the rotation survives the layout.tsx <meta refresh=30> reload — no client
+// state to lose. Initial values are SSR'd so the page works with JS disabled.
 // A tiny ES5 ticker updates every countdown and swaps the active slide each second.
+//
+// NOTE: the Teambuilding and Fable 5 slides are currently DISABLED — only
+// Night Run and GTA VI are live. Their scenes/helpers below are kept intact;
+// to re-enable, add them back to the `slides` array, the grid cells, and the
+// ticker's DUR/CD/UP lists in Page().
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 // ----- Carousel timing (only used in full-rotation mode) -----
-const TEAM_MS = 600000; // 10 minutes (Teambuilding)
 const ROTATE_MS = 180000; // 3 minutes (Night Run)
-const SHORT_MS = 60000; // 1 minute (GTA, Fable)
+const SHORT_MS = 60000; // 1 minute (GTA)
 
 // ----- Countdown targets -----
 const TB_TARGET_MS = new Date("2026-06-27T19:00:00+02:00").getTime();   // Teambuilding Vol. II — Split (departs 19:00)
@@ -955,44 +958,28 @@ function FableScene({ nowMs, back }: { nowMs: number; back: boolean }) {
 
 export default async function Page() {
   const nowMs = Date.now();
-  const [cond, fableBack] = await Promise.all([fetchConditions(), fetchFableBack()]);
 
-  const hourBA = currentBratislavaHour(new Date(nowMs));
-  const sun = computeSunPosition(hourBA, cond.sunriseH, cond.sunsetH);
-  const moon = computeMoonPosition(hourBA, cond.sunriseH, cond.sunsetH);
-  const moonPhase = computeMoonPhase(nowMs);
-  const skyPhase = computeSkyPhase(hourBA, cond.sunriseH, cond.sunsetH);
-
-  // Slides, in rotation order. The teambuilding slide carries the live
-  // weather/sky classes (its scene CSS keys off them).
+  // Slides, in rotation order. Teambuilding and Fable 5 are currently DISABLED
+  // (see the note at the top of this file) — their weather/status fetches are
+  // skipped too, so the page renders with zero external calls.
   const slides: Array<{ cls: string; name: string; node: React.ReactNode }> = [
-    {
-      cls: "slide-tb weather-" + cond.weather + " sky-" + skyPhase,
-      name: "Teambuilding",
-      node: (
-        <TeambuildingScene cond={cond} sun={sun} moon={moon} moonPhase={moonPhase} nowMs={nowMs} />
-      ),
-    },
     { cls: "slide-nr", name: "Night Run", node: <NightRunScene nowMs={nowMs} /> },
     { cls: "slide-gta", name: "GTA VI", node: <GtaScene nowMs={nowMs} /> },
-    { cls: "slide-fable", name: "Fable 5", node: <FableScene nowMs={nowMs} back={fableBack} /> },
   ];
 
-  // Views = the 4 full-screen slides + a grid of all countdowns.
+  // Views = the full-screen slides + a grid of all countdowns.
   // DEFAULT is grid-only: with JS off (or before the ticker first runs) we render
   // the grid view and nothing else. The discreet bottom-right toggle (#mode-toggle)
   // flips into the rotating full-screen slides; the choice lives in location.hash
   // so it survives the layout.tsx <meta refresh=30> reload.
-  const VIEWS = 5;
-  const GRID_VIEW = 4;
+  const VIEWS = slides.length + 1;
+  const GRID_VIEW = slides.length;
   const active = GRID_VIEW; // grid-only by default; the ticker may switch to full rotation
-  const navNames = [slides[0].name, slides[1].name, slides[2].name, slides[3].name, "All"];
+  const navNames = [...slides.map((sl) => sl.name), "All"];
 
   // Countdown values for the grid tiles (same maths as the slides).
-  const gTb = compute(nowMs, TB_TARGET_MS);
   const gNr = compute(nowMs, NR_TARGET_MS);
   const gGta = compute(nowMs, GTA_TARGET_MS);
-  const gFb = computeUp(nowMs, FABLE_OFFLINE_MS);
 
   // ES5-safe ticker. Updates every digit cell each second (variable cell count
   // so days can grow past 99), then paints the active view + nav.
@@ -1002,11 +989,10 @@ export default async function Page() {
   // so they survive the layout.tsx <meta refresh=30> reload.
   const tickerJs =
     "(function(){" +
-    "var B=" + TEAM_MS + ",R=" + ROTATE_MS + ",S=" + SHORT_MS + ",N=" + VIEWS + ";" +
-    "var DUR=[B,R,S,S],TOT=0,di;for(di=0;di<DUR.length;di++){TOT+=DUR[di];}" +
-    "var CD=[['tb'," + TB_TARGET_MS + "],['nr'," + NR_TARGET_MS + "],['gta'," + GTA_TARGET_MS + "]," +
-    "['gtb'," + TB_TARGET_MS + "],['gnr'," + NR_TARGET_MS + "],['ggta'," + GTA_TARGET_MS + "]];" +
-    "var UP=[['fb'," + FABLE_OFFLINE_MS + "],['gfb'," + FABLE_OFFLINE_MS + "]];" +
+    "var R=" + ROTATE_MS + ",S=" + SHORT_MS + ",N=" + VIEWS + ";" +
+    "var DUR=[R,S],TOT=0,di;for(di=0;di<DUR.length;di++){TOT+=DUR[di];}" +
+    "var CD=[['nr'," + NR_TARGET_MS + "],['gta'," + GTA_TARGET_MS + "]," +
+    "['gnr'," + NR_TARGET_MS + "],['ggta'," + GTA_TARGET_MS + "]];" +
     "var h=String(window.location.hash||'');" +
     "var full=(h.indexOf('full')>=0)||(h.indexOf('s=')>=0);" +
     "var manual=-1;var mm=h.match(/s=(\\d+)/);if(mm){var mi=parseInt(mm[1],10);if(mi>=0&&mi<N)manual=mi;}" +
@@ -1015,12 +1001,12 @@ export default async function Page() {
     "for(var j=0;j<cells.length;j++){var ch=s.charAt(j);if(cells[j].firstChild)cells[j].firstChild.nodeValue=ch;else cells[j].innerHTML=ch;}}" +
     "function units(p,ms){if(ms<0)ms=0;setVar(p+'-d',Math.floor(ms/86400000));setVar(p+'-h',Math.floor((ms%86400000)/3600000));setVar(p+'-m',Math.floor((ms%3600000)/60000));setVar(p+'-s',Math.floor((ms%60000)/1000));}" +
     "function autoView(now){var ph=now%TOT,acc=0,i;for(i=0;i<DUR.length;i++){if(ph<acc+DUR[i])return i;acc+=DUR[i];}return 0;}" +
-    "function curView(now){if(!full)return 4;return manual>=0?manual:autoView(now);}" +
-    "function paint(idx){var i;for(i=0;i<4;i++){var el=document.getElementById('slide-'+i);if(el)el.style.display=(i===idx)?'block':'none';}" +
-    "var g=document.getElementById('grid-view');if(g)g.style.display=(idx===4)?'block':'none';" +
+    "function curView(now){if(!full)return N-1;return manual>=0?manual:autoView(now);}" +
+    "function paint(idx){var i;for(i=0;i<N-1;i++){var el=document.getElementById('slide-'+i);if(el)el.style.display=(i===idx)?'block':'none';}" +
+    "var g=document.getElementById('grid-view');if(g)g.style.display=(idx===N-1)?'block':'none';" +
     "var nav=document.getElementById('slide-nav');if(nav)nav.style.display=full?'':'none';" +
     "for(i=0;i<N;i++){var nv=document.getElementById('nav-'+i);if(nv)nv.className='nav-item'+(i===idx?' nav-on':'')+(manual===i?' nav-pin':'');}}" +
-    "function tick(){var now=(new Date()).getTime();var i;for(i=0;i<CD.length;i++){units(CD[i][0],CD[i][1]-now);}for(i=0;i<UP.length;i++){units(UP[i][0],now-UP[i][1]);}" +
+    "function tick(){var now=(new Date()).getTime();var i;for(i=0;i<CD.length;i++){units(CD[i][0],CD[i][1]-now);}" +
     "paint(curView(now));}" +
     "for(var k=0;k<N;k++){(function(j){var nv=document.getElementById('nav-'+j);if(nv){nv.onclick=function(){manual=(manual===j?-1:j);try{window.location.hash=(manual>=0?'s='+manual:'full');}catch(e){}tick();};}})(k);}" +
     "var tg=document.getElementById('mode-toggle');if(tg){tg.onclick=function(){full=!full;manual=-1;try{window.location.hash=(full?'full':'');}catch(e){}tick();};}" +
@@ -1043,7 +1029,7 @@ export default async function Page() {
         </section>
       ))}
 
-      {/* Grid view — all four countdowns at once (2×2, responsive). */}
+      {/* Grid view — the live countdowns side by side (responsive). */}
       <section
         id="grid-view"
         className="stage-slide grid-view"
@@ -1051,16 +1037,6 @@ export default async function Page() {
         suppressHydrationWarning
       >
         <div className="grid-wrap">
-          <GridCell
-            cls={"gcell-tb weather-" + cond.weather + " sky-" + skyPhase}
-            kicker="27.06.2026 · Split"
-            title="Teambuilding"
-            meta="Viedeň → Split · katamarán"
-            prefix="gtb"
-            t={gTb}
-            labels={["dní", "hod", "min", "sek"]}
-            scene={<TbMiniScene cond={cond} sun={sun} moon={moon} moonPhase={moonPhase} />}
-          />
           <GridCell
             cls="gcell-nr"
             kicker="05.09.2026 · 20:00"
@@ -1078,16 +1054,6 @@ export default async function Page() {
             prefix="ggta"
             t={gGta}
             labels={["days", "hrs", "min", "sec"]}
-          />
-          <GridCell
-            cls="gcell-fb"
-            kicker="503 · Offline"
-            title="Fable 5"
-            meta="Offline since 12.06.2026"
-            prefix="gfb"
-            t={gFb}
-            labels={["dní", "hod", "min", "sek"]}
-            watermark={fableBack ? "YES" : "NO"}
           />
         </div>
       </section>

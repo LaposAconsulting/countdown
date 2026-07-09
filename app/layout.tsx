@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Teambuilding Vol. II — 27. jún 2026",
+  title: "Odpočet — Night Run & GTA VI",
   description:
-    "Odpočet do druhého teambuildingu — 27. jún 2026. Viedeň → Split, katamarán po Jadrane.",
+    "Odpočet do Telekom Night Run (5. september 2026, Bratislava) a vydania GTA VI (19. november 2026).",
 };
 
 export default function RootLayout({
