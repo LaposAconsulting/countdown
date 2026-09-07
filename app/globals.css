@@ -1148,9 +1148,101 @@ html, body {
 }
 
 /* =================================================================
+   SLIDE 5 — Birthday
+   Dark oak study (matches the photo's panelling) on the left ~60%, the
+   portrait photo (public/sef.jpg, 4:5) fills the right column, blended in
+   by a left-edge fade. Cream Fraunces italic numerals + one gold accent.
+   ================================================================= */
+.slide-sef .topbar { color: #efe2c8; opacity: 0.9; }
+.slide-sef .rule { border-top-color: rgba(230, 194, 122, 0.30); }
+
+.sef-bg {
+  position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+  background-color: #14100b;
+  background-image: -webkit-radial-gradient(32% 42%, ellipse, #2c1b10 0%, #1a110a 48%, #0c0805 100%);
+  background-image: radial-gradient(ellipse at 32% 42%, #2c1b10 0%, #1a110a 48%, #0c0805 100%);
+}
+.sef-photo {
+  position: absolute; left: 58%; right: 0; top: 0; bottom: 0;
+  background-color: #14100b;
+  background-image: url("/sef.jpg");
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+}
+/* Blend the photo's left edge into the panel. */
+.sef-fade {
+  position: absolute; left: 58%; width: 18%; top: 0; bottom: 0;
+  background: -webkit-linear-gradient(left, rgba(20, 16, 11, 1) 0%, rgba(20, 16, 11, 0.75) 35%, rgba(20, 16, 11, 0) 100%);
+  background: linear-gradient(to right, rgba(20, 16, 11, 1) 0%, rgba(20, 16, 11, 0.75) 35%, rgba(20, 16, 11, 0) 100%);
+}
+/* Gentle top/bottom shade over the photo so the topbar and floor stay quiet. */
+.sef-shade {
+  position: absolute; left: 58%; right: 0; top: 0; bottom: 0;
+  background: -webkit-linear-gradient(top, rgba(12, 8, 5, 0.55) 0%, rgba(12, 8, 5, 0) 22%, rgba(12, 8, 5, 0) 70%, rgba(12, 8, 5, 0.70) 100%);
+  background: linear-gradient(to bottom, rgba(12, 8, 5, 0.55) 0%, rgba(12, 8, 5, 0) 22%, rgba(12, 8, 5, 0) 70%, rgba(12, 8, 5, 0.70) 100%);
+}
+
+/* Everything centres inside the left column, clear of the photo. */
+.slide-sef .hero { padding-right: 42%; padding-bottom: 10vh; }
+.slide-sef .kicker {
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 400;
+  font-size: 44px;
+  letter-spacing: 2px;
+  text-transform: none;
+  color: #f3e9d2;
+  margin-bottom: 30px;
+  opacity: 1;
+}
+.slide-sef .kicker .vol { color: #e6c27a; font-style: italic; font-weight: 600; }
+.slide-sef .num {
+  font-size: 170px;
+  letter-spacing: -3px;
+  color: #f3e9d2;
+  text-shadow: 0 8px 36px rgba(0, 0, 0, 0.7);
+}
+.slide-sef .cell { padding: 0 22px; }
+.slide-sef .lbl { margin-top: 22px; font-size: 17px; letter-spacing: 7px; color: #bfa06a; }
+.sef-wish {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic; font-weight: 600;
+  font-size: 128px; line-height: 1;
+  letter-spacing: -1px;
+  color: #e6c27a;
+  text-align: center;
+  text-shadow: 0 8px 36px rgba(0, 0, 0, 0.7);
+}
+.sef-foot {
+  margin-top: 30px;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 18px;
+  letter-spacing: 7px;
+  text-transform: uppercase;
+  color: rgba(239, 226, 200, 0.6);
+}
+@media (max-width: 1440px) {
+  .slide-sef .hero { padding-bottom: 8vh; }
+  .slide-sef .kicker { font-size: 30px; margin-bottom: 20px; }
+  .slide-sef .num { font-size: 110px; letter-spacing: -2px; }
+  .slide-sef .cell { padding: 0 16px; }
+  .slide-sef .lbl { margin-top: 14px; font-size: 12px; letter-spacing: 4px; }
+  .sef-wish { font-size: 78px; }
+  .sef-foot { font-size: 13px; letter-spacing: 5px; margin-top: 20px; }
+}
+@media (min-width: 2560px) {
+  .slide-sef .kicker { font-size: 60px; margin-bottom: 40px; }
+  .slide-sef .num { font-size: 230px; letter-spacing: -4px; }
+  .slide-sef .cell { padding: 0 30px; }
+  .slide-sef .lbl { margin-top: 30px; font-size: 22px; letter-spacing: 9px; }
+  .sef-wish { font-size: 170px; }
+  .sef-foot { font-size: 24px; letter-spacing: 10px; margin-top: 44px; }
+}
+
+/* =================================================================
    GRID VIEW — all live countdowns at once (responsive)
-   Currently 2 cells (Night Run + GTA VI) side by side, full height.
-   If the Teambuilding/Fable cells come back, restore height: 50% (2×2).
+   Currently 2 cells (Birthday + GTA VI) side by side, full height.
+   With 3 cells use width: 33.333%; with 4, go 50% wide / 50% tall (2×2).
    ================================================================= */
 .grid-view { background: #05060b; }
 .grid-wrap {
@@ -1315,11 +1407,21 @@ html, body {
   background: -webkit-linear-gradient(top, rgba(4,10,24,0.10) 0%, rgba(4,10,24,0.06) 26%, rgba(4,10,24,0.32) 50%, rgba(4,10,24,0.10) 74%, rgba(4,10,24,0.22) 100%);
   background: linear-gradient(to bottom, rgba(4,10,24,0.10) 0%, rgba(4,10,24,0.06) 26%, rgba(4,10,24,0.32) 50%, rgba(4,10,24,0.10) 74%, rgba(4,10,24,0.22) 100%);
 }
+.gcell-sef { background-image: url("/sef.jpg"); background-position: center 22%; }
 .gcell-nr { background-image: url("/nightrun.jpg"); background-position: center 60%; }
 .gcell-gta { background-image: url("/gta6.jpg"); }
 .gcell-fb {
   background-image: -webkit-radial-gradient(50% 36%, ellipse, #38151c 0%, #1c0d12 52%, #0d0b10 100%);
   background-image: radial-gradient(ellipse at 50% 36%, #38151c 0%, #1c0d12 52%, #0d0b10 100%);
+}
+/* Celebration line — replaces the countdown once a tile's target is reached
+   (the ticker toggles display; SSR sets the initial state). */
+.gcell-wish {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic; font-weight: 600;
+  font-size: 54px; line-height: 1.05; letter-spacing: 0;
+  color: #e6c27a;
+  text-shadow: 0 3px 14px rgba(0, 0, 0, 0.7);
 }
 /* Big faint answer behind the Fable tile (paints above the scrim, below text). */
 .gcell-wm {
@@ -1389,6 +1491,7 @@ html, body {
   .gunit { margin-right: 16px; }
   .glbl { font-size: 11px; letter-spacing: 3px; }
   .gcell-meta { font-size: 13px; margin-top: 12px; }
+  .gcell-wish { font-size: 38px; }
   .gcell-wm { font-size: 150px; }
   .gtb-cat { width: 96px; height: 90px; margin-left: -48px; }
   .gtb-sun { width: 34px; height: 34px; margin-left: -17px; margin-top: -17px; -webkit-box-shadow: 0 0 30px 7px rgba(255,196,110,0.5); box-shadow: 0 0 30px 7px rgba(255,196,110,0.5); }
@@ -1404,6 +1507,7 @@ html, body {
   .gunit { margin-right: 32px; }
   .glbl { font-size: 18px; letter-spacing: 6px; }
   .gcell-meta { font-size: 18px; margin-top: 28px; }
+  .gcell-wish { font-size: 70px; }
   .gcell-wm { font-size: 360px; }
   .gtb-cat { width: 220px; height: 207px; margin-left: -110px; }
   .gtb-sun { width: 78px; height: 78px; margin-left: -39px; margin-top: -39px; -webkit-box-shadow: 0 0 68px 16px rgba(255,196,110,0.5); box-shadow: 0 0 68px 16px rgba(255,196,110,0.5); }

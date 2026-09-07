@@ -5,22 +5,23 @@
 // state to lose. Initial values are SSR'd so the page works with JS disabled.
 // A tiny ES5 ticker updates every countdown and swaps the active slide each second.
 //
-// NOTE: the Teambuilding and Fable 5 slides are currently DISABLED — only
-// Night Run and GTA VI are live. Their scenes/helpers below are kept intact;
-// to re-enable, add them back to the `slides` array, the grid cells, and the
-// ticker's DUR/CD/UP lists in Page().
+// NOTE: the Teambuilding, Night Run (finished 05.09.2026) and Fable 5 slides are
+// currently DISABLED — only Birthday and GTA VI are live. Their scenes/helpers
+// below are kept intact; to re-enable, add them back to the `slides` array, the
+// grid cells, and the ticker's DUR/CD/UP lists in Page().
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 // ----- Carousel timing (only used in full-rotation mode) -----
-const ROTATE_MS = 180000; // 3 minutes (Night Run)
+const ROTATE_MS = 180000; // 3 minutes (Birthday)
 const SHORT_MS = 60000; // 1 minute (GTA)
 
 // ----- Countdown targets -----
 const TB_TARGET_MS = new Date("2026-06-27T19:00:00+02:00").getTime();   // Teambuilding Vol. II — Split (departs 19:00)
 const NR_TARGET_MS = new Date("2026-09-05T20:00:00+02:00").getTime();   // Telekom Night Run — Bratislava
 const GTA_TARGET_MS = new Date("2026-11-19T00:00:00+01:00").getTime();  // GTA VI release
+const SEF_TARGET_MS = new Date("2026-09-08T09:00:00+02:00").getTime();  // Birthday — Tuesday 09:00 (Europe/Bratislava, CEST)
 const FABLE_OFFLINE_MS = new Date("2026-06-12T00:00:00+02:00").getTime(); // Fable 5 went offline — count UP
 
 type Weather = "clear" | "partly" | "cloudy" | "fog" | "rain" | "snow" | "storm";
@@ -398,6 +399,8 @@ function GridCell({
   labels,
   watermark,
   scene,
+  wish,
+  done,
 }: {
   cls: string;
   kicker: string;
@@ -408,6 +411,10 @@ function GridCell({
   labels: [string, string, string, string];
   watermark?: string;
   scene?: React.ReactNode;
+  // Optional celebration line. When set, the ticker hides the countdown and
+  // shows this once the target is reached (ids `<prefix>-cd` / `<prefix>-wish`).
+  wish?: string;
+  done?: boolean;
 }) {
   return (
     <div className="gcell">
@@ -422,12 +429,27 @@ function GridCell({
         <div className="gcell-inner">
           <div className="gcell-kicker">{kicker}</div>
           <div className="gcell-title">{title}</div>
-          <div className="gcell-cd">
+          <div
+            className="gcell-cd"
+            id={wish ? prefix + "-cd" : undefined}
+            style={wish && done ? { display: "none" } : undefined}
+            suppressHydrationWarning
+          >
             <GUnit id={prefix + "-d"} v={t.d} lbl={labels[0]} />
             <GUnit id={prefix + "-h"} v={t.h} lbl={labels[1]} />
             <GUnit id={prefix + "-m"} v={t.m} lbl={labels[2]} />
             <GUnit id={prefix + "-s"} v={t.s} lbl={labels[3]} />
           </div>
+          {wish && (
+            <div
+              className="gcell-wish"
+              id={prefix + "-wish"}
+              style={{ display: done ? "block" : "none" }}
+              suppressHydrationWarning
+            >
+              {wish}
+            </div>
+          )}
           <div className="gcell-meta">{meta}</div>
         </div>
       </div>
@@ -956,14 +978,60 @@ function FableScene({ nowMs, back }: { nowMs: number; back: boolean }) {
   );
 }
 
+// ============================================================================
+// Slide 5 — Birthday (whisky-lounge portrait, Tuesday 08.09.2026 09:00)
+// ============================================================================
+function SefScene({ nowMs }: { nowMs: number }) {
+  const t = compute(nowMs, SEF_TARGET_MS);
+  const done = nowMs >= SEF_TARGET_MS;
+  return (
+    <>
+      {/* Dark oak study on the left, the portrait photo (public/sef.jpg) fills the
+          right column; a fade blends its left edge into the panel. */}
+      <div className="sef-bg" aria-hidden="true" />
+      <div className="sef-photo" aria-hidden="true" />
+      <div className="sef-fade" aria-hidden="true" />
+      <div className="sef-shade" aria-hidden="true" />
+      <div className="grain" aria-hidden="true" />
+
+      <div className="content">
+        <div className="topbar">
+          <span className="tb-city">BIRTHDAY</span>
+          <span className="tb-route">BRATISLAVA &middot; SK</span>
+          <span className="tb-city">TUESDAY &middot; 08.09.2026 &middot; 09:00</span>
+        </div>
+        <div className="rule" />
+        <div className="hero">
+          <div className="kicker rise">
+            Happy <span className="vol">Birthday</span>
+          </div>
+          {/* The ticker swaps these two once the target is reached. */}
+          <div id="sef-cd" style={done ? { display: "none" } : undefined} suppressHydrationWarning>
+            <Countdown prefix="sef" t={t} labels={["days", "hrs", "min", "sec"]} />
+          </div>
+          <div
+            id="sef-wish"
+            className="sef-wish rise"
+            style={{ display: done ? "block" : "none" }}
+            suppressHydrationWarning
+          >
+            Happy Birthday!
+          </div>
+          <div className="sef-foot rise">CHEERS &middot; TUESDAY 09:00</div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default async function Page() {
   const nowMs = Date.now();
 
-  // Slides, in rotation order. Teambuilding and Fable 5 are currently DISABLED
+  // Slides, in rotation order. Teambuilding, Night Run and Fable 5 are DISABLED
   // (see the note at the top of this file) — their weather/status fetches are
   // skipped too, so the page renders with zero external calls.
   const slides: Array<{ cls: string; name: string; node: React.ReactNode }> = [
-    { cls: "slide-nr", name: "Night Run", node: <NightRunScene nowMs={nowMs} /> },
+    { cls: "slide-sef", name: "Birthday", node: <SefScene nowMs={nowMs} /> },
     { cls: "slide-gta", name: "GTA VI", node: <GtaScene nowMs={nowMs} /> },
   ];
 
@@ -978,7 +1046,8 @@ export default async function Page() {
   const navNames = [...slides.map((sl) => sl.name), "All"];
 
   // Countdown values for the grid tiles (same maths as the slides).
-  const gNr = compute(nowMs, NR_TARGET_MS);
+  const gSef = compute(nowMs, SEF_TARGET_MS);
+  const sefDone = nowMs >= SEF_TARGET_MS;
   const gGta = compute(nowMs, GTA_TARGET_MS);
 
   // ES5-safe ticker. Updates every digit cell each second (variable cell count
@@ -991,8 +1060,11 @@ export default async function Page() {
     "(function(){" +
     "var R=" + ROTATE_MS + ",S=" + SHORT_MS + ",N=" + VIEWS + ";" +
     "var DUR=[R,S],TOT=0,di;for(di=0;di<DUR.length;di++){TOT+=DUR[di];}" +
-    "var CD=[['nr'," + NR_TARGET_MS + "],['gta'," + GTA_TARGET_MS + "]," +
-    "['gnr'," + NR_TARGET_MS + "],['ggta'," + GTA_TARGET_MS + "]];" +
+    "var CD=[['sef'," + SEF_TARGET_MS + "],['gta'," + GTA_TARGET_MS + "]," +
+    "['gsef'," + SEF_TARGET_MS + "],['ggta'," + GTA_TARGET_MS + "]];" +
+    // Countdowns with a celebration line: once <= 0, hide `<p>-cd`, show `<p>-wish`.
+    "var WISH=[['sef'," + SEF_TARGET_MS + "],['gsef'," + SEF_TARGET_MS + "]];" +
+    "function wish(p,ms){var c=document.getElementById(p+'-cd'),w=document.getElementById(p+'-wish');if(!c||!w)return;var dn=ms<=0;c.style.display=dn?'none':'';w.style.display=dn?'block':'none';}" +
     "var h=String(window.location.hash||'');" +
     "var full=(h.indexOf('full')>=0)||(h.indexOf('s=')>=0);" +
     "var manual=-1;var mm=h.match(/s=(\\d+)/);if(mm){var mi=parseInt(mm[1],10);if(mi>=0&&mi<N)manual=mi;}" +
@@ -1007,6 +1079,7 @@ export default async function Page() {
     "var nav=document.getElementById('slide-nav');if(nav)nav.style.display=full?'':'none';" +
     "for(i=0;i<N;i++){var nv=document.getElementById('nav-'+i);if(nv)nv.className='nav-item'+(i===idx?' nav-on':'')+(manual===i?' nav-pin':'');}}" +
     "function tick(){var now=(new Date()).getTime();var i;for(i=0;i<CD.length;i++){units(CD[i][0],CD[i][1]-now);}" +
+    "for(i=0;i<WISH.length;i++){wish(WISH[i][0],WISH[i][1]-now);}" +
     "paint(curView(now));}" +
     "for(var k=0;k<N;k++){(function(j){var nv=document.getElementById('nav-'+j);if(nv){nv.onclick=function(){manual=(manual===j?-1:j);try{window.location.hash=(manual>=0?'s='+manual:'full');}catch(e){}tick();};}})(k);}" +
     "var tg=document.getElementById('mode-toggle');if(tg){tg.onclick=function(){full=!full;manual=-1;try{window.location.hash=(full?'full':'');}catch(e){}tick();};}" +
@@ -1038,13 +1111,15 @@ export default async function Page() {
       >
         <div className="grid-wrap">
           <GridCell
-            cls="gcell-nr"
-            kicker="05.09.2026 · 20:00"
-            title="Night Run"
-            meta="Telekom · 10 km · Bratislava"
-            prefix="gnr"
-            t={gNr}
-            labels={["dní", "hod", "min", "sek"]}
+            cls="gcell-sef"
+            kicker="Tuesday · 08.09.2026 · 09:00"
+            title="Birthday"
+            meta="Cheers · Bratislava"
+            prefix="gsef"
+            t={gSef}
+            labels={["days", "hrs", "min", "sec"]}
+            wish="Happy Birthday!"
+            done={sefDone}
           />
           <GridCell
             cls="gcell-gta"
