@@ -1148,63 +1148,61 @@ html, body {
 }
 
 /* =================================================================
-   SLIDE 5 — Birthday
-   Dark oak study (matches the photo's panelling) on the left ~60%, the
-   portrait photo (public/sef.jpg, 4:5) fills the right column, blended in
-   by a left-edge fade. Cream Fraunces italic numerals + one gold accent.
+   SLIDE 5 — Husacina
+   Full-bleed photo (public/husacina.jpg — crowned goose over Bratislava at
+   night) + poster scrim: near-clear over the goose and the castle, heavy at
+   the base so the countdown sits on a dark warm band. Cream Fraunces italic
+   numerals + one gold accent, matching the lantern light in the photo.
    ================================================================= */
-.slide-sef .topbar { color: #efe2c8; opacity: 0.9; }
-.slide-sef .rule { border-top-color: rgba(230, 194, 122, 0.30); }
+.slide-hus .topbar { color: #efe2c8; opacity: 0.9; }
+.slide-hus .rule { border-top-color: rgba(230, 194, 122, 0.30); }
 
-.sef-bg {
+.hus-photo {
   position: absolute; left: 0; right: 0; top: 0; bottom: 0;
-  background-color: #14100b;
-  background-image: -webkit-radial-gradient(32% 42%, ellipse, #2c1b10 0%, #1a110a 48%, #0c0805 100%);
-  background-image: radial-gradient(ellipse at 32% 42%, #2c1b10 0%, #1a110a 48%, #0c0805 100%);
-}
-.sef-photo {
-  position: absolute; left: 58%; right: 0; top: 0; bottom: 0;
-  background-color: #14100b;
-  background-image: url("/sef.jpg");
+  background-color: #0e0b14; /* shows through only until the photo paints */
+  background-image: url("/husacina.jpg");
   background-size: cover;
-  background-position: center top;
+  background-position: center 40%; /* keeps the crown below the topbar, castle in frame */
   background-repeat: no-repeat;
 }
-/* Blend the photo's left edge into the panel. */
-.sef-fade {
-  position: absolute; left: 58%; width: 18%; top: 0; bottom: 0;
-  background: -webkit-linear-gradient(left, rgba(20, 16, 11, 1) 0%, rgba(20, 16, 11, 0.75) 35%, rgba(20, 16, 11, 0) 100%);
-  background: linear-gradient(to right, rgba(20, 16, 11, 1) 0%, rgba(20, 16, 11, 0.75) 35%, rgba(20, 16, 11, 0) 100%);
-}
-/* Gentle top/bottom shade over the photo so the topbar and floor stay quiet. */
-.sef-shade {
-  position: absolute; left: 58%; right: 0; top: 0; bottom: 0;
-  background: -webkit-linear-gradient(top, rgba(12, 8, 5, 0.55) 0%, rgba(12, 8, 5, 0) 22%, rgba(12, 8, 5, 0) 70%, rgba(12, 8, 5, 0.70) 100%);
-  background: linear-gradient(to bottom, rgba(12, 8, 5, 0.55) 0%, rgba(12, 8, 5, 0) 22%, rgba(12, 8, 5, 0) 70%, rgba(12, 8, 5, 0.70) 100%);
+/* Poster scrim: a touch at the top for the topbar, clear through the middle,
+   heavy at the base for the title block. Warm dark brown to match the table. */
+.hus-shade {
+  position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+  background: -webkit-linear-gradient(top,
+    rgba(8, 8, 18, 0.55) 0%, rgba(8, 8, 18, 0.12) 16%, rgba(8, 8, 18, 0) 36%,
+    rgba(14, 9, 8, 0.42) 54%, rgba(14, 9, 8, 0.80) 72%, rgba(14, 9, 8, 0.95) 100%);
+  background: linear-gradient(to bottom,
+    rgba(8, 8, 18, 0.55) 0%, rgba(8, 8, 18, 0.12) 16%, rgba(8, 8, 18, 0) 36%,
+    rgba(14, 9, 8, 0.42) 54%, rgba(14, 9, 8, 0.80) 72%, rgba(14, 9, 8, 0.95) 100%);
 }
 
-/* Everything centres inside the left column, clear of the photo. */
-.slide-sef .hero { padding-right: 42%; padding-bottom: 10vh; }
-.slide-sef .kicker {
-  font-family: "Fraunces", Georgia, serif;
-  font-weight: 400;
-  font-size: 44px;
-  letter-spacing: 2px;
-  text-transform: none;
-  color: #f3e9d2;
-  margin-bottom: 30px;
-  opacity: 1;
+/* Title + countdown live in the lower third, clear of the goose and the castle. */
+.slide-hus .hero {
+  -webkit-box-pack: end; -webkit-justify-content: flex-end; justify-content: flex-end;
+  padding-bottom: 7vh;
 }
-.slide-sef .kicker .vol { color: #e6c27a; font-style: italic; font-weight: 600; }
-.slide-sef .num {
-  font-size: 170px;
+.slide-hus .kicker {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 64px;
+  letter-spacing: 1px;
+  text-transform: none;
+  color: #e6c27a;
+  margin-bottom: 26px;
+  opacity: 1;
+  text-shadow: 0 6px 30px rgba(0, 0, 0, 0.7);
+}
+.slide-hus .num {
+  font-size: 190px;
   letter-spacing: -3px;
   color: #f3e9d2;
-  text-shadow: 0 8px 36px rgba(0, 0, 0, 0.7);
+  text-shadow: 0 8px 36px rgba(0, 0, 0, 0.75);
 }
-.slide-sef .cell { padding: 0 22px; }
-.slide-sef .lbl { margin-top: 22px; font-size: 17px; letter-spacing: 7px; color: #bfa06a; }
-.sef-wish {
+.slide-hus .cell { padding: 0 24px; }
+.slide-hus .lbl { margin-top: 22px; font-size: 17px; letter-spacing: 7px; color: #d2b47c; }
+.hus-wish {
   font-family: "Fraunces", Georgia, serif;
   font-style: italic; font-weight: 600;
   font-size: 128px; line-height: 1;
@@ -1213,35 +1211,36 @@ html, body {
   text-align: center;
   text-shadow: 0 8px 36px rgba(0, 0, 0, 0.7);
 }
-.sef-foot {
+.hus-foot {
   margin-top: 30px;
   font-family: "JetBrains Mono", "Courier New", monospace;
   font-size: 18px;
   letter-spacing: 7px;
   text-transform: uppercase;
-  color: rgba(239, 226, 200, 0.6);
+  color: rgba(239, 226, 200, 0.65);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
 }
 @media (max-width: 1440px) {
-  .slide-sef .hero { padding-bottom: 8vh; }
-  .slide-sef .kicker { font-size: 30px; margin-bottom: 20px; }
-  .slide-sef .num { font-size: 110px; letter-spacing: -2px; }
-  .slide-sef .cell { padding: 0 16px; }
-  .slide-sef .lbl { margin-top: 14px; font-size: 12px; letter-spacing: 4px; }
-  .sef-wish { font-size: 78px; }
-  .sef-foot { font-size: 13px; letter-spacing: 5px; margin-top: 20px; }
+  .slide-hus .hero { padding-bottom: 6vh; }
+  .slide-hus .kicker { font-size: 42px; margin-bottom: 18px; }
+  .slide-hus .num { font-size: 120px; letter-spacing: -2px; }
+  .slide-hus .cell { padding: 0 16px; }
+  .slide-hus .lbl { margin-top: 14px; font-size: 12px; letter-spacing: 4px; }
+  .hus-wish { font-size: 78px; }
+  .hus-foot { font-size: 13px; letter-spacing: 5px; margin-top: 20px; }
 }
 @media (min-width: 2560px) {
-  .slide-sef .kicker { font-size: 60px; margin-bottom: 40px; }
-  .slide-sef .num { font-size: 230px; letter-spacing: -4px; }
-  .slide-sef .cell { padding: 0 30px; }
-  .slide-sef .lbl { margin-top: 30px; font-size: 22px; letter-spacing: 9px; }
-  .sef-wish { font-size: 170px; }
-  .sef-foot { font-size: 24px; letter-spacing: 10px; margin-top: 44px; }
+  .slide-hus .kicker { font-size: 88px; margin-bottom: 36px; }
+  .slide-hus .num { font-size: 250px; letter-spacing: -4px; }
+  .slide-hus .cell { padding: 0 32px; }
+  .slide-hus .lbl { margin-top: 30px; font-size: 22px; letter-spacing: 9px; }
+  .hus-wish { font-size: 170px; }
+  .hus-foot { font-size: 24px; letter-spacing: 10px; margin-top: 44px; }
 }
 
 /* =================================================================
    GRID VIEW — all live countdowns at once (responsive)
-   Currently 2 cells (Birthday + GTA VI) side by side, full height.
+   Currently 2 cells (Husacina + GTA VI) side by side, full height.
    With 3 cells use width: 33.333%; with 4, go 50% wide / 50% tall (2×2).
    ================================================================= */
 .grid-view { background: #05060b; }
@@ -1407,7 +1406,7 @@ html, body {
   background: -webkit-linear-gradient(top, rgba(4,10,24,0.10) 0%, rgba(4,10,24,0.06) 26%, rgba(4,10,24,0.32) 50%, rgba(4,10,24,0.10) 74%, rgba(4,10,24,0.22) 100%);
   background: linear-gradient(to bottom, rgba(4,10,24,0.10) 0%, rgba(4,10,24,0.06) 26%, rgba(4,10,24,0.32) 50%, rgba(4,10,24,0.10) 74%, rgba(4,10,24,0.22) 100%);
 }
-.gcell-sef { background-image: url("/sef.jpg"); background-position: center 22%; }
+.gcell-hus { background-image: url("/husacina.jpg"); background-position: 30% center; }
 .gcell-nr { background-image: url("/nightrun.jpg"); background-position: center 60%; }
 .gcell-gta { background-image: url("/gta6.jpg"); }
 .gcell-fb {

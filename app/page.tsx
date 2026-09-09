@@ -6,7 +6,7 @@
 // A tiny ES5 ticker updates every countdown and swaps the active slide each second.
 //
 // NOTE: the Teambuilding, Night Run (finished 05.09.2026) and Fable 5 slides are
-// currently DISABLED — only Birthday and GTA VI are live. Their scenes/helpers
+// currently DISABLED — only Husacina and GTA VI are live. Their scenes/helpers
 // below are kept intact; to re-enable, add them back to the `slides` array, the
 // grid cells, and the ticker's DUR/CD/UP lists in Page().
 
@@ -14,14 +14,14 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 // ----- Carousel timing (only used in full-rotation mode) -----
-const ROTATE_MS = 180000; // 3 minutes (Birthday)
+const ROTATE_MS = 180000; // 3 minutes (Husacina)
 const SHORT_MS = 60000; // 1 minute (GTA)
 
 // ----- Countdown targets -----
 const TB_TARGET_MS = new Date("2026-06-27T19:00:00+02:00").getTime();   // Teambuilding Vol. II — Split (departs 19:00)
 const NR_TARGET_MS = new Date("2026-09-05T20:00:00+02:00").getTime();   // Telekom Night Run — Bratislava
 const GTA_TARGET_MS = new Date("2026-11-19T00:00:00+01:00").getTime();  // GTA VI release
-const SEF_TARGET_MS = new Date("2026-09-08T09:00:00+02:00").getTime();  // Birthday — Tuesday 09:00 (Europe/Bratislava, CEST)
+const HUS_TARGET_MS = new Date("2026-12-04T18:00:00+01:00").getTime();  // Husacina — Friday 18:00 (Europe/Bratislava, CET)
 const FABLE_OFFLINE_MS = new Date("2026-06-12T00:00:00+02:00").getTime(); // Fable 5 went offline — count UP
 
 type Weather = "clear" | "partly" | "cloudy" | "fog" | "rain" | "snow" | "storm";
@@ -979,45 +979,41 @@ function FableScene({ nowMs, back }: { nowMs: number; back: boolean }) {
 }
 
 // ============================================================================
-// Slide 5 — Birthday (whisky-lounge portrait, Tuesday 08.09.2026 09:00)
+// Slide 5 — Husacina (goose feast, Friday 04.12.2026 18:00)
 // ============================================================================
-function SefScene({ nowMs }: { nowMs: number }) {
-  const t = compute(nowMs, SEF_TARGET_MS);
-  const done = nowMs >= SEF_TARGET_MS;
+function HusacinaScene({ nowMs }: { nowMs: number }) {
+  const t = compute(nowMs, HUS_TARGET_MS);
+  const done = nowMs >= HUS_TARGET_MS;
   return (
     <>
-      {/* Dark oak study on the left, the portrait photo (public/sef.jpg) fills the
-          right column; a fade blends its left edge into the panel. */}
-      <div className="sef-bg" aria-hidden="true" />
-      <div className="sef-photo" aria-hidden="true" />
-      <div className="sef-fade" aria-hidden="true" />
-      <div className="sef-shade" aria-hidden="true" />
+      {/* Full-bleed photo (public/husacina.jpg — crowned goose over Bratislava)
+          + a poster scrim: light over the goose/castle, heavy under the numbers. */}
+      <div className="hus-photo" aria-hidden="true" />
+      <div className="hus-shade" aria-hidden="true" />
       <div className="grain" aria-hidden="true" />
 
       <div className="content">
         <div className="topbar">
-          <span className="tb-city">BIRTHDAY</span>
+          <span className="tb-city">HUSACINA</span>
           <span className="tb-route">BRATISLAVA &middot; SK</span>
-          <span className="tb-city">TUESDAY &middot; 08.09.2026 &middot; 09:00</span>
+          <span className="tb-city">FRIDAY &middot; 04.12.2026 &middot; 18:00</span>
         </div>
         <div className="rule" />
         <div className="hero">
-          <div className="kicker rise">
-            Happy <span className="vol">Birthday</span>
-          </div>
+          <div className="kicker rise">Husacina</div>
           {/* The ticker swaps these two once the target is reached. */}
-          <div id="sef-cd" style={done ? { display: "none" } : undefined} suppressHydrationWarning>
-            <Countdown prefix="sef" t={t} labels={["days", "hrs", "min", "sec"]} />
+          <div id="hus-cd" style={done ? { display: "none" } : undefined} suppressHydrationWarning>
+            <Countdown prefix="hus" t={t} labels={["days", "hrs", "min", "sec"]} />
           </div>
           <div
-            id="sef-wish"
-            className="sef-wish rise"
+            id="hus-wish"
+            className="hus-wish rise"
             style={{ display: done ? "block" : "none" }}
             suppressHydrationWarning
           >
-            Happy Birthday!
+            Bon app&eacute;tit!
           </div>
-          <div className="sef-foot rise">CHEERS &middot; TUESDAY 09:00</div>
+          <div className="hus-foot rise">ROAST GOOSE &middot; FRIDAY 18:00</div>
         </div>
       </div>
     </>
@@ -1031,7 +1027,7 @@ export default async function Page() {
   // (see the note at the top of this file) — their weather/status fetches are
   // skipped too, so the page renders with zero external calls.
   const slides: Array<{ cls: string; name: string; node: React.ReactNode }> = [
-    { cls: "slide-sef", name: "Birthday", node: <SefScene nowMs={nowMs} /> },
+    { cls: "slide-hus", name: "Husacina", node: <HusacinaScene nowMs={nowMs} /> },
     { cls: "slide-gta", name: "GTA VI", node: <GtaScene nowMs={nowMs} /> },
   ];
 
@@ -1046,8 +1042,8 @@ export default async function Page() {
   const navNames = [...slides.map((sl) => sl.name), "All"];
 
   // Countdown values for the grid tiles (same maths as the slides).
-  const gSef = compute(nowMs, SEF_TARGET_MS);
-  const sefDone = nowMs >= SEF_TARGET_MS;
+  const gHus = compute(nowMs, HUS_TARGET_MS);
+  const husDone = nowMs >= HUS_TARGET_MS;
   const gGta = compute(nowMs, GTA_TARGET_MS);
 
   // ES5-safe ticker. Updates every digit cell each second (variable cell count
@@ -1060,10 +1056,10 @@ export default async function Page() {
     "(function(){" +
     "var R=" + ROTATE_MS + ",S=" + SHORT_MS + ",N=" + VIEWS + ";" +
     "var DUR=[R,S],TOT=0,di;for(di=0;di<DUR.length;di++){TOT+=DUR[di];}" +
-    "var CD=[['sef'," + SEF_TARGET_MS + "],['gta'," + GTA_TARGET_MS + "]," +
-    "['gsef'," + SEF_TARGET_MS + "],['ggta'," + GTA_TARGET_MS + "]];" +
+    "var CD=[['hus'," + HUS_TARGET_MS + "],['gta'," + GTA_TARGET_MS + "]," +
+    "['ghus'," + HUS_TARGET_MS + "],['ggta'," + GTA_TARGET_MS + "]];" +
     // Countdowns with a celebration line: once <= 0, hide `<p>-cd`, show `<p>-wish`.
-    "var WISH=[['sef'," + SEF_TARGET_MS + "],['gsef'," + SEF_TARGET_MS + "]];" +
+    "var WISH=[['hus'," + HUS_TARGET_MS + "],['ghus'," + HUS_TARGET_MS + "]];" +
     "function wish(p,ms){var c=document.getElementById(p+'-cd'),w=document.getElementById(p+'-wish');if(!c||!w)return;var dn=ms<=0;c.style.display=dn?'none':'';w.style.display=dn?'block':'none';}" +
     "var h=String(window.location.hash||'');" +
     "var full=(h.indexOf('full')>=0)||(h.indexOf('s=')>=0);" +
@@ -1111,15 +1107,15 @@ export default async function Page() {
       >
         <div className="grid-wrap">
           <GridCell
-            cls="gcell-sef"
-            kicker="Tuesday · 08.09.2026 · 09:00"
-            title="Birthday"
-            meta="Cheers · Bratislava"
-            prefix="gsef"
-            t={gSef}
+            cls="gcell-hus"
+            kicker="Friday · 04.12.2026 · 18:00"
+            title="Husacina"
+            meta="Roast goose · Bratislava"
+            prefix="ghus"
+            t={gHus}
             labels={["days", "hrs", "min", "sec"]}
-            wish="Happy Birthday!"
-            done={sefDone}
+            wish="Bon appétit!"
+            done={husDone}
           />
           <GridCell
             cls="gcell-gta"

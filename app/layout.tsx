@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Odpočet — Birthday & GTA VI",
+  title: "Odpočet — Husacina & GTA VI",
   description:
-    "Odpočet do narodenín (8. september 2026, 09:00) a vydania GTA VI (19. november 2026).",
+    "Odpočet do husaciny (4. december 2026, 18:00) a vydania GTA VI (19. november 2026).",
 };
 
 export default function RootLayout({
