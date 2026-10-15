@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Odpočet — Husacina & GTA VI",
   description:
-    "Odpočet do husaciny (4. december 2026, 18:00) a vydania GTA VI (19. november 2026).",
+    "Odpočet do husaciny (3. december 2026, 18:00) a vydania GTA VI (19. november 2026).",
 };
 
 export default function RootLayout({

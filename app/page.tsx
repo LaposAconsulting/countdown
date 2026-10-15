@@ -21,7 +21,7 @@ const SHORT_MS = 60000; // 1 minute (GTA)
 const TB_TARGET_MS = new Date("2026-06-27T19:00:00+02:00").getTime();   // Teambuilding Vol. II — Split (departs 19:00)
 const NR_TARGET_MS = new Date("2026-09-05T20:00:00+02:00").getTime();   // Telekom Night Run — Bratislava
 const GTA_TARGET_MS = new Date("2026-11-19T00:00:00+01:00").getTime();  // GTA VI release
-const HUS_TARGET_MS = new Date("2026-12-04T18:00:00+01:00").getTime();  // Husacina — Friday 18:00 (Europe/Bratislava, CET)
+const HUS_TARGET_MS = new Date("2026-12-03T18:00:00+01:00").getTime();  // Husacina — Thursday 18:00 (Europe/Bratislava, CET)
 const FABLE_OFFLINE_MS = new Date("2026-06-12T00:00:00+02:00").getTime(); // Fable 5 went offline — count UP
 
 type Weather = "clear" | "partly" | "cloudy" | "fog" | "rain" | "snow" | "storm";
@@ -979,7 +979,7 @@ function FableScene({ nowMs, back }: { nowMs: number; back: boolean }) {
 }
 
 // ============================================================================
-// Slide 5 — Husacina (goose feast, Friday 04.12.2026 18:00)
+// Slide 5 — Husacina (goose feast, Thursday 03.12.2026 18:00)
 // ============================================================================
 function HusacinaScene({ nowMs }: { nowMs: number }) {
   const t = compute(nowMs, HUS_TARGET_MS);
@@ -996,7 +996,7 @@ function HusacinaScene({ nowMs }: { nowMs: number }) {
         <div className="topbar">
           <span className="tb-city">HUSACINA</span>
           <span className="tb-route">BRATISLAVA &middot; SK</span>
-          <span className="tb-city">FRIDAY &middot; 04.12.2026 &middot; 18:00</span>
+          <span className="tb-city">THURSDAY &middot; 03.12.2026 &middot; 18:00</span>
         </div>
         <div className="rule" />
         <div className="hero">
@@ -1013,7 +1013,7 @@ function HusacinaScene({ nowMs }: { nowMs: number }) {
           >
             Bon app&eacute;tit!
           </div>
-          <div className="hus-foot rise">ROAST GOOSE &middot; FRIDAY 18:00</div>
+          <div className="hus-foot rise">ROAST GOOSE &middot; THURSDAY 18:00</div>
         </div>
       </div>
     </>
@@ -1108,7 +1108,7 @@ export default async function Page() {
         <div className="grid-wrap">
           <GridCell
             cls="gcell-hus"
-            kicker="Friday · 04.12.2026 · 18:00"
+            kicker="Thursday · 03.12.2026 · 18:00"
             title="Husacina"
             meta="Roast goose · Bratislava"
             prefix="ghus"
