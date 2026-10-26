@@ -10,7 +10,7 @@
 // below are kept intact; to re-enable, add them back to the `slides` array, the
 // grid cells, and the ticker's DUR/CD/UP lists in Page().
 
-import { isVideoMode, videoSrc, videoPeriodMs, VIDEO_COOKIE } from "./video-mode";
+import { isVideoMode, pickVideo, videoPeriodMs, VIDEO_COOKIE, VIDEO_LAST_COOKIE } from "./video-mode";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -1022,10 +1022,28 @@ function HusacinaScene({ nowMs }: { nowMs: number }) {
   );
 }
 
+// Tile geometry for the live video grid, in % of a 16:9 box. Mirrors the
+// pre-rendered fallback (make-grid.sh): 3 tiles per row, last row centred,
+// 600x338 tiles with 24px gaps on a 1920x1080 canvas.
+function gridTilePos(i: number, n: number): { left: number; top: number; width: number; height: number } {
+  const W = 1920, H = 1080, cols = 3, gap = 24, tw = 600, th = 338;
+  const rows = Math.ceil(n / cols);
+  const gw = cols * tw + (cols - 1) * gap;
+  const gh = rows * th + (rows - 1) * gap;
+  const x0 = (W - gw) / 2, y0 = (H - gh) / 2;
+  const r = Math.floor(i / cols), c = i % cols;
+  const inRow = Math.min(cols, n - r * cols);
+  const rowX0 = x0 + ((cols - inRow) * (tw + gap)) / 2;
+  const x = rowX0 + c * (tw + gap), y = y0 + r * (th + gap);
+  return { left: (x / W) * 100, top: (y / H) * 100, width: (tw / W) * 100, height: (th / H) * 100 };
+}
+
 export default async function Page() {
   const nowMs = Date.now();
   // Video break mode (cookie overrides env) — see app/video-mode.ts.
+  // In video mode each page load (= one interval) gets a random clip.
   const video = await isVideoMode();
+  const clip = video ? await pickVideo() : null;
 
   // Slides, in rotation order. Teambuilding, Night Run and Fable 5 are DISABLED
   // (see the note at the top of this file) — their weather/status fetches are
@@ -1096,21 +1114,37 @@ export default async function Page() {
   // on purpose: with JS off it must not play audio behind a hidden overlay.
   const videoJs =
     "(function(){" +
-    "var ON=" + (video ? 1 : 0) + ",P=" + videoPeriodMs() + ";" +
+    "var ON=" + (video ? 1 : 0) + ",P=" + videoPeriodMs() + ",IDX=" + (clip ? clip.index : -1) + ",G=" + (clip && clip.kind === "grid" ? 1 : 0) + ";" +
     "var tg=document.getElementById('video-toggle');if(tg){tg.onclick=function(){" +
     "var exp=new Date();exp.setTime(exp.getTime()+31536000000);" +
     "try{document.cookie='" + VIDEO_COOKIE + "='+(ON?'0':'1')+';path=/;max-age=31536000;expires='+exp.toUTCString();}catch(e){}" +
     "try{window.location.reload();}catch(e){}};}" +
     "if(!ON)return;var v=document.getElementById('video-el');if(!v)return;" +
-    "var shown=false,dead=false;" +
-    "function cls(on){var b=document.body,c=b.className.replace(/\\s*\\bvideo-on\\b/g,'');b.className=on?(c?c+' video-on':'video-on'):c;}" +
-    "function show(){if(dead||shown)return;shown=true;cls(true);}" +
-    "function hide(){if(dead)return;dead=true;shown=false;cls(false);try{v.pause();v.removeAttribute('src');v.load();}catch(e){}}" +
-    "v.onplaying=show;v.onended=hide;v.onerror=hide;" +
-    "setTimeout(function(){if(!shown)hide();},20000);" +
+    "var shown=false,dead=false,tiles=[],ti;" +
+    "if(G){for(ti=0;;ti++){var tt=document.getElementById('vg-'+ti);if(!tt)break;tiles.push(tt);}}" +
+    // No regex escapes here on purpose: a '\\b' in this string reached the browser
+    // as a backspace byte through the RSC/SSR path, so the class never came off.
+    "function cls(on){var b=document.body,p=b.className.split(' '),o=[],i;for(i=0;i<p.length;i++){if(p[i]&&p[i]!=='video-on')o.push(p[i]);}if(on)o.push('video-on');b.className=o.join(' ');}" +
+    "function show(){if(dead||shown)return;shown=true;cls(true);try{document.cookie='" + VIDEO_LAST_COOKIE + "='+IDX+';path=/;max-age=86400';}catch(e){}}" +
+    "function drop(el){try{el.pause();el.removeAttribute('src');el.load();}catch(e){}}" +
+    "function hide(){if(dead)return;dead=true;shown=false;cls(false);drop(v);for(var k=0;k<tiles.length;k++)drop(tiles[k]);}" +
+    // play(el, muted, onfail): onfail(muted) runs when play() is refused.
+    "function play(el,muted,onfail){if(muted)el.muted=true;var p=null;try{p=el.play();}catch(e){}if(p&&p.then){p.then(null,function(){onfail(muted);});}}" +
+    // Single video (#video-el): sound first, muted retry.
+    "function single(){v.onplaying=show;v.onended=hide;v.onerror=hide;play(v,false,function(m){if(!m)play(v,true,function(){});});}" +
+    "setTimeout(function(){if(!shown)hide();},G?30000:20000);" +
     "setTimeout(hide,P-5000);" +
-    "function go(muted){if(muted)v.muted=true;var p=null;try{p=v.play();}catch(e){}if(p&&p.then){p.then(null,function(){if(!muted)go(true);});}}" +
-    "go(false);" +
+    "if(!G||!tiles.length){single();}else{" +
+    // Live grid: start every tile (tile 0 with sound, others muted). Overlay appears
+    // once ALL tiles are playing, then they are kept within 120 ms of tile 0.
+    // Any refusal/error, or not all playing within 6 s → pre-rendered fallback.
+    "var ready=0,started=false,fell=false;" +
+    "function sync(){var m=tiles[0].currentTime;for(var k=1;k<tiles.length;k++){if(Math.abs(tiles[k].currentTime-m)>0.12){try{tiles[k].currentTime=m;}catch(e){}}}}" +
+    "function fallback(){if(fell||dead)return;fell=true;for(var k=0;k<tiles.length;k++)drop(tiles[k]);var gb=document.getElementById('vgrid-box');if(gb)gb.style.display='none';v.style.display='block';v.preload='auto';single();}" +
+    "function onReady(){if(this.vgReady)return;this.vgReady=true;ready++;if(ready>=tiles.length&&!started){started=true;sync();show();setInterval(function(){if(!dead&&!fell)sync();},1000);}}" +
+    "for(ti=0;ti<tiles.length;ti++){(function(t,k){t.onplaying=onReady;t.onerror=fallback;if(k===0)t.onended=hide;play(t,k!==0,function(m){if(!m){play(t,true,function(){fallback();});}else{fallback();}});})(tiles[ti],ti);}" +
+    "setTimeout(function(){if(!started)fallback();},6000);" +
+    "}" +
     "})();";
 
   return (
@@ -1185,9 +1219,41 @@ export default async function Page() {
       {/* Video break overlay — only rendered in video mode; shown via body.video-on
           while the clip plays. Native letterboxing, src straight on the element so
           `error` fires on it (not on a <source>). */}
-      {video && (
+      {clip && clip.kind === "clip" && (
         <div id="video-wrap" className="video-wrap" aria-hidden="true">
-          <video id="video-el" src={videoSrc()} preload="auto" playsInline />
+          <video id="video-el" src={clip.src} preload="auto" playsInline />
+        </div>
+      )}
+
+      {/* Live grid: every clip as a tile, in sync, audio from tile 0. If the browser
+          can't start all tiles within 6 s (the 2014 TV), the script swaps in the
+          pre-rendered grid video (#video-el, same look, see make-grid.sh). */}
+      {clip && clip.kind === "grid" && (
+        <div id="video-wrap" className="video-wrap" aria-hidden="true">
+          <div id="vgrid-box" className="vgrid-box" suppressHydrationWarning>
+            <div className="vgrid">
+              {clip.tiles.map((src, i) => {
+                const p = gridTilePos(i, clip.tiles.length);
+                return (
+                  <div
+                    key={i}
+                    className="vtile"
+                    style={{ left: p.left + "%", top: p.top + "%", width: p.width + "%", height: p.height + "%" }}
+                  >
+                    <video id={"vg-" + i} src={src} preload="auto" playsInline />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <video
+            id="video-el"
+            src={clip.fallback}
+            preload="none"
+            playsInline
+            style={{ display: "none" }}
+            suppressHydrationWarning
+          />
         </div>
       )}
 

@@ -1559,3 +1559,35 @@ body.video-on .carousel { display: none; }
   transition: opacity 300ms ease;
 }
 .video-toggle:hover { opacity: 0.55; }
+
+/* ----- Live video grid (video break, "grid" pick) -----
+   A 16:9 box centred in the viewport; tiles are absolutely positioned in % by
+   gridTilePos() in page.tsx (3 per row, last row centred), rounded, on the
+   site's dark background. Mirrors the pre-rendered fallback exactly. */
+.vgrid-box {
+  position: absolute;
+  left: 0; top: 50%;
+  width: 100%;
+  padding-top: 56.25%;        /* 16:9 */
+  margin-top: -28.125%;       /* half the height (percent of width) */
+  background: #05060a;
+}
+@media (min-aspect-ratio: 16/9) {
+  .vgrid-box {
+    width: 177.7778vh;
+    padding-top: 100vh;
+    margin-top: -50vh;
+    left: 50%;
+    margin-left: -88.8889vh;
+  }
+}
+.video-wrap { background: #05060a; }
+.vgrid { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.vtile {
+  position: absolute;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #000;
+  -webkit-box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+}
