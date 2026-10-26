@@ -10,7 +10,7 @@
 // below are kept intact; to re-enable, add them back to the `slides` array, the
 // grid cells, and the ticker's DUR/CD/UP lists in Page().
 
-import { isVideoMode, pickVideo, videoPeriodMs, VIDEO_COOKIE, VIDEO_LAST_COOKIE } from "./video-mode";
+import { isVideoMode, pickVideo, videoPeriodMs, VIDEO_COOKIE, VIDEO_LAST_COOKIE, VIDEO_AUTO_COOKIE } from "./video-mode";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -1134,6 +1134,9 @@ export default async function Page() {
     "function single(){v.onplaying=show;v.onended=hide;v.onerror=hide;play(v,false,function(m){if(!m)play(v,true,function(){});});}" +
     "setTimeout(function(){if(!shown)hide();},G?30000:20000);" +
     "setTimeout(hide,P-5000);" +
+    // Mark the upcoming timed reload as automatic (random pick); a manual refresh
+    // or a fresh visit has no such cookie and starts with the grid.
+    "setTimeout(function(){try{document.cookie='" + VIDEO_AUTO_COOKIE + "=1;path=/;max-age=40';}catch(e){}},P-5000);" +
     "if(!G||!tiles.length){single();}else{" +
     // Live grid: start every tile (tile 0 with sound, others muted). Overlay appears
     // once ALL tiles are playing, then they are kept within 120 ms of tile 0.

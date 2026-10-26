@@ -48,6 +48,12 @@ const DEFAULT_VIDEOS = ["/video-1.mp4", "/video-2.mp4", "/video-3.mp4", "/video-
 // (= next interval, since each reload is one interval) avoids an immediate repeat.
 export const VIDEO_LAST_COOKIE = "vlast";
 
+// Set by the inline script a few seconds before the timed <meta refresh> reload
+// (short max-age). Its presence tells the server "this load is the automatic
+// interval reload" → random pick. Any other load (first visit, manual refresh,
+// reopened page) has no such cookie and always starts with the grid.
+export const VIDEO_AUTO_COOKIE = "vauto";
+
 export function videoList(): string[] {
   const raw = (process.env.VIDEO_SRC || "").split(",").map((s) => s.trim()).filter(Boolean);
   return raw.length ? raw : DEFAULT_VIDEOS;
@@ -64,13 +70,19 @@ export type VideoPick =
   | { kind: "clip"; src: string; index: number }
   | { kind: "grid"; tiles: string[]; fallback: string; index: number };
 
-// Random pick per page load: one of the clips, or (with 2+ clips) the grid of
-// all of them — never the same as the last one played in this browser.
+// Pick per page load: the grid on every "fresh" load (see VIDEO_AUTO_COOKIE);
+// on the automatic interval reloads a random clip or the grid, never the same
+// as the last one played in this browser.
 export async function pickVideo(): Promise<VideoPick> {
   const list = videoList();
   const withGrid = list.length > 1;
   const n = list.length + (withGrid ? 1 : 0); // last index = the grid
-  const c = (await cookies()).get(VIDEO_LAST_COOKIE);
+  const jar = await cookies();
+  const a = jar.get(VIDEO_AUTO_COOKIE);
+  if (withGrid && !(a && a.value === "1")) {
+    return { kind: "grid", tiles: list.concat(ORIGINAL_SRC), fallback: GRID_SRC, index: list.length };
+  }
+  const c = jar.get(VIDEO_LAST_COOKIE);
   const last = c ? parseInt(c.value, 10) : -1;
   let candidates: number[] = [];
   for (let i = 0; i < n; i++) candidates.push(i);
