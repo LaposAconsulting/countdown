@@ -10,6 +10,8 @@
 // below are kept intact; to re-enable, add them back to the `slides` array, the
 // grid cells, and the ticker's DUR/CD/UP lists in Page().
 
+import { isVideoMode, videoSrc, VIDEO_PERIOD_MS, VIDEO_COOKIE } from "./video-mode";
+
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -1022,6 +1024,8 @@ function HusacinaScene({ nowMs }: { nowMs: number }) {
 
 export default async function Page() {
   const nowMs = Date.now();
+  // Video break mode (cookie overrides env) — see app/video-mode.ts.
+  const video = await isVideoMode();
 
   // Slides, in rotation order. Teambuilding, Night Run and Fable 5 are DISABLED
   // (see the note at the top of this file) — their weather/status fetches are
@@ -1082,72 +1086,117 @@ export default async function Page() {
     "tick();setInterval(tick,1000);" +
     "})();";
 
+  // ES5-safe video-break script. The hidden bottom-left corner (#video-toggle)
+  // flips the `video` cookie and reloads (always wired). In video mode, each
+  // page load plays the clip once: the overlay appears only once playback
+  // really starts (`playing`), and goes away on `ended`/`error`, if the clip
+  // hasn't started within 20 s, or shortly before the period's <meta refresh>
+  // reload. Tries with sound first; if play() is refused (autoplay policy on a
+  // modern browser) it retries muted. The <video> has no `autoplay` attribute
+  // on purpose: with JS off it must not play audio behind a hidden overlay.
+  const videoJs =
+    "(function(){" +
+    "var ON=" + (video ? 1 : 0) + ",P=" + VIDEO_PERIOD_MS + ";" +
+    "var tg=document.getElementById('video-toggle');if(tg){tg.onclick=function(){" +
+    "var exp=new Date();exp.setTime(exp.getTime()+31536000000);" +
+    "try{document.cookie='" + VIDEO_COOKIE + "='+(ON?'0':'1')+';path=/;max-age=31536000;expires='+exp.toUTCString();}catch(e){}" +
+    "try{window.location.reload();}catch(e){}};}" +
+    "if(!ON)return;var v=document.getElementById('video-el');if(!v)return;" +
+    "var shown=false,dead=false;" +
+    "function cls(on){var b=document.body,c=b.className.replace(/\\s*\\bvideo-on\\b/g,'');b.className=on?(c?c+' video-on':'video-on'):c;}" +
+    "function show(){if(dead||shown)return;shown=true;cls(true);}" +
+    "function hide(){if(dead)return;dead=true;shown=false;cls(false);try{v.pause();v.removeAttribute('src');v.load();}catch(e){}}" +
+    "v.onplaying=show;v.onended=hide;v.onerror=hide;" +
+    "setTimeout(function(){if(!shown)hide();},20000);" +
+    "setTimeout(hide,P-5000);" +
+    "function go(muted){if(muted)v.muted=true;var p=null;try{p=v.play();}catch(e){}if(p&&p.then){p.then(null,function(){if(!muted)go(true);});}}" +
+    "go(false);" +
+    "})();";
+
   return (
-    <main className="carousel">
-      {slides.map((sl, i) => (
-        // display + nav className are driven imperatively by the ticker — suppress
-        // hydration reconciliation on the nodes it mutates before React loads.
-        <section
-          key={i}
-          id={"slide-" + i}
-          className={"stage-slide " + sl.cls}
-          style={{ display: i === active ? undefined : "none" }}
-          suppressHydrationWarning
-        >
-          {sl.node}
-        </section>
-      ))}
-
-      {/* Grid view — the live countdowns side by side (responsive). */}
-      <section
-        id="grid-view"
-        className="stage-slide grid-view"
-        style={{ display: active === GRID_VIEW ? undefined : "none" }}
-        suppressHydrationWarning
-      >
-        <div className="grid-wrap">
-          <GridCell
-            cls="gcell-hus"
-            kicker="Thursday · 03.12.2026 · 18:00"
-            title="Husacina"
-            meta="Roast goose · Bratislava"
-            prefix="ghus"
-            t={gHus}
-            labels={["days", "hrs", "min", "sec"]}
-            wish="Bon appétit!"
-            done={husDone}
-          />
-          <GridCell
-            cls="gcell-gta"
-            kicker="19.11.2026"
-            title="GTA VI"
-            meta="Grand Theft Auto · PS5 / Xbox"
-            prefix="ggta"
-            t={gGta}
-            labels={["days", "hrs", "min", "sec"]}
-          />
-        </div>
-      </section>
-
-      {/* Bottom nav — only shown in full-rotation mode (ticker toggles it). */}
-      <div className="slide-nav" id="slide-nav" style={{ display: "none" }}>
-        {navNames.map((nm, i) => (
-          <span
+    <>
+      <main className="carousel">
+        {slides.map((sl, i) => (
+          // display + nav className are driven imperatively by the ticker — suppress
+          // hydration reconciliation on the nodes it mutates before React loads.
+          <section
             key={i}
-            id={"nav-" + i}
-            className={"nav-item" + (i === active ? " nav-on" : "")}
+            id={"slide-" + i}
+            className={"stage-slide " + sl.cls}
+            style={{ display: i === active ? undefined : "none" }}
             suppressHydrationWarning
           >
-            {nm}
-          </span>
+            {sl.node}
+          </section>
         ))}
-      </div>
 
-      {/* Discreet view toggle — bottom-right corner, barely visible. Click/tap to
-          switch between the all-countdowns grid (default) and the rotating slides. */}
-      <div id="mode-toggle" className="mode-toggle" aria-hidden="true" />
+        {/* Grid view — the live countdowns side by side (responsive). */}
+        <section
+          id="grid-view"
+          className="stage-slide grid-view"
+          style={{ display: active === GRID_VIEW ? undefined : "none" }}
+          suppressHydrationWarning
+        >
+          <div className="grid-wrap">
+            <GridCell
+              cls="gcell-hus"
+              kicker="Thursday · 03.12.2026 · 18:00"
+              title="Husacina"
+              meta="Roast goose · Bratislava"
+              prefix="ghus"
+              t={gHus}
+              labels={["days", "hrs", "min", "sec"]}
+              wish="Bon appétit!"
+              done={husDone}
+            />
+            <GridCell
+              cls="gcell-gta"
+              kicker="19.11.2026"
+              title="GTA VI"
+              meta="Grand Theft Auto · PS5 / Xbox"
+              prefix="ggta"
+              t={gGta}
+              labels={["days", "hrs", "min", "sec"]}
+            />
+          </div>
+        </section>
 
-      <script dangerouslySetInnerHTML={{ __html: tickerJs }} />
-    </main>
+        {/* Bottom nav — only shown in full-rotation mode (ticker toggles it). */}
+        <div className="slide-nav" id="slide-nav" style={{ display: "none" }}>
+          {navNames.map((nm, i) => (
+            <span
+              key={i}
+              id={"nav-" + i}
+              className={"nav-item" + (i === active ? " nav-on" : "")}
+              suppressHydrationWarning
+            >
+              {nm}
+            </span>
+          ))}
+        </div>
+
+        {/* Discreet view toggle — bottom-right corner, barely visible. Click/tap to
+            switch between the all-countdowns grid (default) and the rotating slides. */}
+        <div id="mode-toggle" className="mode-toggle" aria-hidden="true" />
+
+        <script dangerouslySetInnerHTML={{ __html: tickerJs }} />
+      </main>
+
+      {/* Video break overlay — only rendered in video mode; shown via body.video-on
+          while the clip plays. Native letterboxing, src straight on the element so
+          `error` fires on it (not on a <source>). */}
+      {video && (
+        <div id="video-wrap" className="video-wrap" aria-hidden="true">
+          <video id="video-el" src={videoSrc()} preload="auto" playsInline />
+        </div>
+      )}
+
+      {/* Discreet video-mode toggle — bottom-LEFT corner, barely visible. Click/tap
+          flips the `video` cookie and reloads. Outside <main> so it stays
+          clickable while the carousel is hidden behind the video. */}
+      <div id="video-toggle" className="video-toggle" aria-hidden="true" />
+
+      <script dangerouslySetInnerHTML={{ __html: videoJs }} />
+    </>
   );
 }
