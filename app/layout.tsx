@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { isVideoMode, VIDEO_PERIOD_MS } from "./video-mode";
+import { isVideoMode, videoPeriodMs } from "./video-mode";
 
 export const metadata: Metadata = {
   title: "Odpočet — Husacina & GTA VI",
@@ -17,11 +17,12 @@ export default async function RootLayout({
       <head>
         {/* Safety net: if inline ES5 ticker doesn't run on the TV,
             re-fetch the page every 30s so values stay in sync.
-            In video mode the reload IS the scheduler: one reload per period,
-            each load autoplays the video once (see app/video-mode.ts). */}
+            In video mode the reload IS the scheduler: one reload per period
+            (env VIDEO_EVERY_MIN, default 5 min), each load autoplays the video
+            once (see app/video-mode.ts). */}
         <meta
           httpEquiv="refresh"
-          content={video ? String(VIDEO_PERIOD_MS / 1000) : "30"}
+          content={video ? String(videoPeriodMs() / 1000) : "30"}
         />
         {/* Google Fonts — served as WOFF for old UAs, with strong serif/mono
             fallbacks in CSS so the page still looks right if fonts fail. */}

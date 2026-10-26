@@ -1,4 +1,4 @@
-// "Video break" mode — every VIDEO_PERIOD_MS the page plays a short video
+// "Video break" mode — every VIDEO_EVERY_MIN minutes the page plays a short video
 // full-screen, then returns to the countdown. Server-side flag, resolved per
 // request (the page is force-dynamic):
 //
@@ -9,13 +9,27 @@
 //      (e.g. in .env.local, needs a restart of `next start`).
 //
 // Scheduling piggybacks on the layout.tsx <meta refresh>: in video mode the page
-// reloads every VIDEO_PERIOD_MS instead of every 30 s, and each load autoplays the
-// video once — so "every 5 minutes" needs no client state and survives reloads.
+// reloads every videoPeriodMs() instead of every 30 s, and each load autoplays the
+// video once — so "every N minutes" needs no client state and survives reloads.
 // The video therefore has to be shorter than the period.
 import { cookies } from "next/headers";
 
-export const VIDEO_PERIOD_MS = 300000; // 5 minutes
 export const VIDEO_COOKIE = "video";
+const DEFAULT_EVERY_MIN = 5;
+const MAX_EVERY_MIN = 24 * 60;
+
+// Minutes between plays: env VIDEO_EVERY_MIN (whole minutes, 1..1440), default 5.
+// Anything unparsable or out of range falls back to the default.
+export function videoEveryMin(): number {
+  const raw = (process.env.VIDEO_EVERY_MIN || "").trim();
+  const n = parseInt(raw, 10);
+  if (!isFinite(n) || String(n) !== raw || n < 1 || n > MAX_EVERY_MIN) return DEFAULT_EVERY_MIN;
+  return n;
+}
+
+export function videoPeriodMs(): number {
+  return videoEveryMin() * 60000;
+}
 
 export async function isVideoMode(): Promise<boolean> {
   const c = (await cookies()).get(VIDEO_COOKIE);

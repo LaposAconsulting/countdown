@@ -10,7 +10,7 @@
 // below are kept intact; to re-enable, add them back to the `slides` array, the
 // grid cells, and the ticker's DUR/CD/UP lists in Page().
 
-import { isVideoMode, videoSrc, VIDEO_PERIOD_MS, VIDEO_COOKIE } from "./video-mode";
+import { isVideoMode, videoSrc, videoPeriodMs, VIDEO_COOKIE } from "./video-mode";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -1096,7 +1096,7 @@ export default async function Page() {
   // on purpose: with JS off it must not play audio behind a hidden overlay.
   const videoJs =
     "(function(){" +
-    "var ON=" + (video ? 1 : 0) + ",P=" + VIDEO_PERIOD_MS + ";" +
+    "var ON=" + (video ? 1 : 0) + ",P=" + videoPeriodMs() + ";" +
     "var tg=document.getElementById('video-toggle');if(tg){tg.onclick=function(){" +
     "var exp=new Date();exp.setTime(exp.getTime()+31536000000);" +
     "try{document.cookie='" + VIDEO_COOKIE + "='+(ON?'0':'1')+';path=/;max-age=31536000;expires='+exp.toUTCString();}catch(e){}" +
