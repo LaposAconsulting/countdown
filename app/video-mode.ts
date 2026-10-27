@@ -14,6 +14,11 @@
 // The video therefore has to be shorter than the period.
 import { cookies } from "next/headers";
 
+// Master switch, hard-coded. When false the video break is OFF everywhere:
+// the cookie and the VIDEO_MODE env are ignored and the page behaves as before
+// the mode existed (30 s refresh, no video markup). Flip to true to re-enable.
+export const VIDEO_ENABLED = false;
+
 export const VIDEO_COOKIE = "video";
 const DEFAULT_EVERY_MIN = 5;
 const MAX_EVERY_MIN = 24 * 60;
@@ -32,6 +37,7 @@ export function videoPeriodMs(): number {
 }
 
 export async function isVideoMode(): Promise<boolean> {
+  if (!VIDEO_ENABLED) return false;
   const c = (await cookies()).get(VIDEO_COOKIE);
   if (c && (c.value === "1" || c.value === "0")) return c.value === "1";
   const env = (process.env.VIDEO_MODE || "").trim().toLowerCase();
